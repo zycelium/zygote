@@ -46,14 +46,13 @@ class ZygoteApp:
         if self.process and self.process.is_alive():
             webbrowser.open(f"http://{self.host}:{self.port}/")
         else:
-            rumps.alert("Server not running")
+            rumps.alert("Server not running", "Please start the server.")
 
     def quit(self, _sender):
         """Quit"""
         if self.process and self.process.is_alive():
             self.process.terminate()
             self.process.join()
-            self.process = None
         rumps.quit_application()
 
     def run(self):
