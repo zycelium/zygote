@@ -85,7 +85,7 @@ class Server(Agent):
         self._log.info("Shutting down...")
         await self.stop()
     
-    async def _on_connect(self, sid: str, environ: dict) -> None:
+    async def _on_connect(self, sid: str, _environ: dict) -> None:
         """On connect."""
         self._log.info("Client connected: %s", sid)
 
