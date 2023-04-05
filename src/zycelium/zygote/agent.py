@@ -1,9 +1,11 @@
 """
 Zygote agent.
 """
+import asyncio
 import logging
 from typing import Optional
 
+import apscheduler
 import socketio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -14,8 +16,8 @@ class Agent:
     def __init__(self, name: str, debug: bool = False) -> None:
         self.name = name
         self.debug = debug
+        self._log = None # self._init_log(name=name, debug=debug)
         self._sio = self._init_sio()
-        self._log = self._init_log(name=name, debug=debug)
         self._scheduler = self._init_scheduler()
 
     def _init_sio(self) -> socketio.AsyncClient:
@@ -25,13 +27,14 @@ class Agent:
     def _init_log(self, name: str, debug: bool) -> logging.Logger:
         log = logging.getLogger(name)
         log.setLevel(logging.DEBUG if debug else logging.INFO)
+        log.propagate = False
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
         handler = logging.StreamHandler()
         handler.setLevel(logging.DEBUG if debug else logging.INFO)
         handler.setFormatter(formatter)
-        log.addHandler(handler)
+        log.addHandler(handler)        
         return log
 
     def _init_scheduler(self) -> AsyncIOScheduler:
@@ -124,12 +127,16 @@ class Agent:
 
         return decorator
 
-    async def start(self, url: str) -> None:
+    async def start(self, url: str, debug: bool = False, delay: float = 1) -> None:
         """Start the agent."""
+        self._log = self._init_log(name=self.name, debug=debug)
         self._log.info("Starting agent...")
+        await asyncio.sleep(delay)
         self._start_scheduler()
         await self._sio.connect(url)
         self._log.info("Agent started.")
+        while True:
+            await asyncio.sleep(1)
 
     async def stop(self) -> None:
         """Stop the agent."""
@@ -137,3 +144,7 @@ class Agent:
         self._stop_scheduler()
         await self._sio.disconnect()
         self._log.info("Agent stopped.")
+
+    async def emit(self, event: str, data: dict) -> None:
+        """Emit event."""
+        await self._sio.emit(event=event, data=data)
