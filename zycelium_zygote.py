@@ -32,6 +32,7 @@ class ZygoteApp:
         """Start server"""
         if self.process and self.process.is_alive():
             self.process.terminate()
+            self.process.join()
             self.process = None
             sender.title = "Start Server"
             return
