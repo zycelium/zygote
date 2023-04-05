@@ -27,7 +27,11 @@ OPTIONS = {
         "CFBundleShortVersionString": "0.0.1",
         "LSUIElement": True,
     },
-    "packages": ["rumps"],
+    "packages": [
+        "rumps",
+        "uvicorn",
+        "quart",
+    ],
 }
 
 setup(

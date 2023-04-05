@@ -1,27 +1,80 @@
 """This is a docstring for zycelium_zygote.py."""
+import asyncio
+import multiprocessing
+import webbrowser
+
 import rumps
 
-
-@rumps.clicked("Testing")
-def tester(sender):
-    """This is a callback for the "Testing" menu item"""
-    sender.state = not sender.state
+from zycelium.zygote.server import Server
 
 
-class SomeApp(rumps.App):
-    """This is a docstring for SomeApp."""
+def _start_server(host: str, port: int, debug: bool = False):
+    """Start server"""
+    try:
+        server = Server(name="zygote", debug=debug)
+        asyncio.run(server.start(host=host, port=port))
+    except KeyboardInterrupt:
+        pass
+    except asyncio.CancelledError:
+        pass
 
-    def __init__(self):
-        super().__init__(type(self).__name__, menu=["On", "Testing"])
-        rumps.debug_mode(True)
-        self.icon = "images/icon.png"
 
-    @rumps.clicked("On")
-    def button(self, sender):
-        """This is a callback for the "On" menu item"""
-        sender.title = "Off" if sender.title == "On" else "On"
-        rumps.Window("I can't think of a good example app...").run()
+class ZygoteApp:
+    """ZygoteApp"""
+
+    def __init__(self, host: str, port: int, debug: bool = False):
+        self.host = host
+        self.port = port
+        self.debug = debug
+        self.process = None
+
+    def start_server(self, sender):
+        """Start server"""
+        if self.process and self.process.is_alive():
+            self.process.terminate()
+            self.process = None
+            sender.title = "Start Server"
+            return
+        self.process = multiprocessing.Process(
+            target=_start_server, args=(self.host, self.port, self.debug)
+        )
+        self.process.start()
+        sender.title = "Stop Server"
+
+    def open_browser(self, _sender):
+        """Open browser"""
+        if self.process and self.process.is_alive():
+            webbrowser.open(f"http://{self.host}:{self.port}/")
+        else:
+            rumps.alert("Server not running")
+
+    def quit(self, _sender):
+        """Quit"""
+        if self.process and self.process.is_alive():
+            self.process.terminate()
+            self.process.join()
+            self.process = None
+        rumps.quit_application()
+
+    def run(self):
+        """Run app"""
+        app = rumps.App("Zygote", quit_button=None)
+        app.icon = "images/icon.png"
+        app.menu = [
+            rumps.MenuItem("Open Browser", callback=self.open_browser),
+            rumps.separator,
+            rumps.MenuItem("Start Server", callback=self.start_server),
+            rumps.separator,
+            rumps.MenuItem("Quit", callback=self.quit),
+        ]
+        app.run()
+
+
+def main():
+    """Main"""
+    app = ZygoteApp(host="localhost", port=3965, debug=True)
+    app.run()
 
 
 if __name__ == "__main__":
-    SomeApp().run()
+    main()
