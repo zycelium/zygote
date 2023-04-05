@@ -1,4 +1,4 @@
-"""This is a docstring for zycelium_zygote.py."""
+"""Zygote App"""
 import asyncio
 import multiprocessing
 import webbrowser
@@ -20,7 +20,7 @@ def _start_server(host: str, port: int, debug: bool = False):
 
 
 class ZygoteApp:
-    """ZygoteApp"""
+    """Zygote App"""
 
     def __init__(self, host: str, port: int, debug: bool = False):
         self.host = host
