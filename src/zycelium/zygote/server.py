@@ -1,7 +1,9 @@
 """
 Zygote server agent.
 """
+import asyncio
 import importlib
+import multiprocessing
 import pkgutil
 from typing import Iterable
 import socketio
@@ -12,12 +14,26 @@ from quart_cors import cors
 from zycelium.zygote.agent import Agent
 
 
+def start_agent(name: str, url: str, debug: bool = False) -> socketio.AsyncClient:
+    """Start agent."""
+    agent_module = importlib.import_module(name)
+    try:
+        print(f"Starting {name} agent...")
+        asyncio.run(agent_module.agent.start(url=url, debug=debug))
+    except KeyboardInterrupt:
+        pass
+    except asyncio.CancelledError:
+        pass
+
+
 class Server(Agent):
     """Zygote server agent."""
 
     def __init__(
         self, name: str, debug: bool = False, *, allow_origin: str = "*"
     ) -> None:
+        self.name = name
+        self.debug = debug
         self.host = ""
         self.port = 0
         self._allow_origin = allow_origin
@@ -28,6 +44,10 @@ class Server(Agent):
         self._sio_app = socketio.ASGIApp(self._sio, self._quart_app)
         self._quart_app.before_serving(self._on_startup)
         self._quart_app.after_serving(self._on_shutdown)
+        self._sio.on(event="connect", namespace="/")(self._on_connect)
+        self._sio.on(event="disconnect", namespace="/")(self._on_disconnect)
+        self._sio.on(event="*", namespace="/")(self._on_event)
+        self._agent_processes = {}
 
     def _init_sio(self) -> socketio.AsyncServer:
         sio = socketio.AsyncServer(
@@ -51,12 +71,31 @@ class Server(Agent):
     async def _on_startup(self) -> None:
         """On startup."""
         self._log.info("Starting up...")
-        for agent in self._discover_agents():
-            self._log.info("Loading agent: %s", agent)
+        for agent_name in self._discover_agents():
+            assert agent_name not in self._agent_processes, "Agent already running"
+            self._log.info("Loading agent: %s", agent_name)
+            agent_process = multiprocessing.Process(
+                target=start_agent, args=(agent_name, f"http://{self.host}:{self.port}/", self.debug)
+            )
+            agent_process.start()
+            self._agent_processes[agent_name] = agent_process
 
     async def _on_shutdown(self) -> None:
         """On shutdown."""
         self._log.info("Shutting down...")
+        await self.stop()
+    
+    async def _on_connect(self, sid: str, environ: dict) -> None:
+        """On connect."""
+        self._log.info("Client connected: %s", sid)
+
+    async def _on_disconnect(self, sid: str) -> None:
+        """On disconnect."""
+        self._log.info("Client disconnected: %s", sid)
+    
+    async def _on_event(self, sid: str, event: str, data: dict) -> None:
+        """On event."""
+        self._log.info("Client event: %s %s %s", sid, event, data)
 
     async def start(  # pylint: disable=arguments-differ
         self, host: str, port: int
@@ -64,6 +103,7 @@ class Server(Agent):
         """Start the server."""
         self.host = host
         self.port = port
+        self._log = self._init_log(name=self.name, debug=self.debug)
         self._log.info("Starting server...")
         self._start_scheduler()
         uvconfig = uvicorn.Config(
@@ -84,4 +124,7 @@ class Server(Agent):
     async def stop(self) -> None:
         """Stop the server."""
         self._log.info("Stopping server...")
-        self._stop_scheduler()
+        for name, process in self._agent_processes.items():
+            self._log.info("Stopping agent: %s", name)
+            process.terminate()
+            process.join()
