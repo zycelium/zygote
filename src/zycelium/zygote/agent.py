@@ -5,7 +5,6 @@ import asyncio
 import logging
 from typing import Optional
 
-import apscheduler
 import socketio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -140,6 +139,7 @@ class Agent:
 
     async def stop(self) -> None:
         """Stop the agent."""
+        assert self._log is not None
         self._log.info("Stopping agent...")
         self._stop_scheduler()
         await self._sio.disconnect()
