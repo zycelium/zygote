@@ -15,9 +15,11 @@ class Agent:
     def __init__(self, name: str, debug: bool = False) -> None:
         self.name = name
         self.debug = debug
-        self._log = None # self._init_log(name=name, debug=debug)
+        self.config = {}
+        self._log = None  # self._init_log(name=name, debug=debug)
         self._sio = self._init_sio()
         self._scheduler = self._init_scheduler()
+        self._on_startup_handler = None
 
     def _init_sio(self) -> socketio.AsyncClient:
         sio = socketio.AsyncClient()
@@ -28,12 +30,12 @@ class Agent:
         log.setLevel(logging.DEBUG if debug else logging.INFO)
         log.propagate = False
         formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            "%(asctime)s - %(filename)s:%(lineno)s  - %(name)s - %(levelname)s - %(message)s"
         )
         handler = logging.StreamHandler()
         handler.setLevel(logging.DEBUG if debug else logging.INFO)
         handler.setFormatter(formatter)
-        log.addHandler(handler)        
+        log.addHandler(handler)
         return log
 
     def _init_scheduler(self) -> AsyncIOScheduler:
@@ -45,6 +47,22 @@ class Agent:
 
     def _stop_scheduler(self) -> None:
         self._scheduler.shutdown()
+
+    def on_startup(self, delay: float = 0.0):
+        """Startup event handler."""
+
+        def wrapper(func):
+            async def wrapped(*args, **kwargs):
+                await asyncio.sleep(delay)
+                await func(*args, **kwargs)
+
+            if asyncio.iscoroutinefunction(func):
+                self._on_startup_handler = wrapped
+            else:
+                raise TypeError("on_startup decorator must be used with a coroutine")
+            return func
+        
+        return wrapper
 
     def on_interval(
         self,
@@ -134,6 +152,8 @@ class Agent:
         self._start_scheduler()
         await self._sio.connect(url)
         self._log.info("Agent started.")
+        if self._on_startup_handler:
+            await self._on_startup_handler()  # type: ignore
         while True:
             await asyncio.sleep(1)
 
