@@ -7,6 +7,7 @@ import multiprocessing
 import pkgutil
 from datetime import datetime
 from typing import Iterable
+
 import socketio
 import uvicorn
 from quart import Quart
@@ -97,7 +98,7 @@ class Server(Agent):
     async def _on_event(self, kind: str, sid: str, frame: dict) -> None:
         """On event."""
         frame["timestamp"] = await self._get_timestamp()
-        await self._sio.emit(kind, frame)
+        await self._sio.emit(kind, frame, skip_sid=sid, namespace="/")
         self._log.info("Client event: %s %s %s", sid, kind, frame)
     
     async def _get_timestamp(self) -> str:
