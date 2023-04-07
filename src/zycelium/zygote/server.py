@@ -69,6 +69,12 @@ class Server(Agent):
         for _, name, _ in _iter_namespace(namespace):
             self._log.info("Found agent: %s", name)
             yield name
+
+        # Installable agents
+        namespace = importlib.import_module("zycelium.agents")
+        for _, name, _ in _iter_namespace(namespace):
+            self._log.info("Found agent: %s", name)
+            yield name
     
     async def _on_startup(self) -> None:
         """On startup."""
