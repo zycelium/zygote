@@ -144,13 +144,14 @@ class Agent:
 
         return decorator
 
-    async def start(self, url: str, debug: bool = False, delay: float = 1) -> None:
+    async def start(self, url: str, debug: bool = False, delay: float = 1, auth: Optional[dict] = None) -> None:
         """Start the agent."""
         self._log = self._init_log(name=self.name, debug=debug)
         self._log.info("Starting agent...")
         await asyncio.sleep(delay)
         self._start_scheduler()
-        await self._sio.connect(url)
+        self._log.info("Connecting to %s... with auth %s", url, auth)
+        await self._sio.connect(url, auth=auth)
         self._log.info("Agent started.")
         if self._on_startup_handler:
             await self._on_startup_handler()  # type: ignore

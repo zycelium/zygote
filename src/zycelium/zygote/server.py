@@ -6,22 +6,24 @@ import importlib
 import multiprocessing
 import pkgutil
 from datetime import datetime
-from typing import Iterable
+from pathlib import Path
+from typing import Iterable, Optional
+from uuid import uuid4
 
 import socketio
 import uvicorn
-from quart import Quart
+from quart import Quart, render_template
 from quart_cors import cors
 
 from zycelium.zygote.agent import Agent
 
 
-def start_agent(name: str, url: str, debug: bool = False) -> socketio.AsyncClient:
+def start_agent(name: str, url: str, debug: bool = False, auth: Optional[dict] = None) -> socketio.AsyncClient:
     """Start agent."""
     agent_module = importlib.import_module(name)
     try:
         print(f"Starting {name} agent...")
-        asyncio.run(agent_module.agent.start(url=url, debug=debug))
+        asyncio.run(agent_module.agent.start(url=url, debug=debug, auth=auth))
     except KeyboardInterrupt:
         pass
     except asyncio.CancelledError:
@@ -40,7 +42,10 @@ class Server(Agent):
         self.port = 0
         self._allow_origin = allow_origin
         super().__init__(name=name, debug=debug)
-        self._quart_app = Quart(self.name)
+        self._base_path = Path(__file__).parent
+        self._quart_app = Quart(
+            self.name, template_folder=str(self._base_path.joinpath("templates"))
+        )
         self._quart_app = cors(self._quart_app, allow_origin=self._allow_origin)
         self._quart_app.config["DEBUG"] = self.debug
         self._sio_app = socketio.ASGIApp(self._sio, self._quart_app)
@@ -49,6 +54,9 @@ class Server(Agent):
         self._sio.on(event="connect", namespace="/")(self._on_connect)
         self._sio.on(event="disconnect", namespace="/")(self._on_disconnect)
         self._sio.on(event="*", namespace="/")(self._on_event)
+        # self._quart_app.template_folder = "templates"
+        self._quart_app.route("/")(self._http_index)
+        self._agents = {}
         self._agent_processes = {}
 
     def _init_sio(self) -> socketio.AsyncServer:
@@ -83,9 +91,14 @@ class Server(Agent):
         for agent_name in self._discover_agents():
             assert agent_name not in self._agent_processes, "Agent already running"
             self._log.info("Loading agent: %s", agent_name)
+            auth = {
+                "agent": agent_name,
+                "token": uuid4().hex,
+            }
+            self._agents[agent_name] = {"auth": auth}
             agent_process = multiprocessing.Process(
                 target=start_agent,
-                args=(agent_name, f"http://{self.host}:{self.port}/", self.debug),
+                args=(agent_name, f"http://{self.host}:{self.port}/", self.debug, auth),
             )
             agent_process.start()
             self._agent_processes[agent_name] = agent_process
@@ -95,9 +108,13 @@ class Server(Agent):
         self._log.info("Shutting down...")
         await self.stop()
 
-    async def _on_connect(self, sid: str, _environ: dict) -> None:
+    async def _on_connect(self, sid: str, environ: dict, auth: dict) -> None:
         """On connect."""
-        self._log.info("Client connected: %s", sid)
+        self._log.info("Client connected: %s %s", sid, auth)
+        if auth.get("token") != self._agents.get(auth.get("agent"), {}).get("auth", {}).get("token"):
+            self._log.info("Client authentication failed: %s", sid)
+            await self._sio.disconnect(sid=sid, namespace="/")
+            return
 
     async def _on_disconnect(self, sid: str) -> None:
         """On disconnect."""
@@ -112,6 +129,10 @@ class Server(Agent):
     async def _get_timestamp(self) -> str:
         """Get timestamp."""
         return datetime.now().isoformat()
+
+    async def _http_index(self) -> str:
+        """Home page."""
+        return await render_template("index.html", agents=self._agents)
 
     async def start(  # pylint: disable=arguments-differ
         self, host: str, port: int
