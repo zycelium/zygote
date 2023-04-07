@@ -59,23 +59,24 @@ class Server(Agent):
 
     def _discover_agents(self) -> Iterable[str]:
         """Discover agents."""
-        self._log.info("Discovering agents...")
 
         def _iter_namespace(ns_pkg):
             return pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + ".")
 
         # Built-in agents
+        self._log.info("Discovering built-in agents...")
         namespace = importlib.import_module("zycelium.zygote.agents")
         for _, name, _ in _iter_namespace(namespace):
-            self._log.info("Found agent: %s", name)
+            self._log.info("Found built-in agent: %s", name)
             yield name
 
         # Installable agents
+        self._log.info("Discovering installed agents")
         namespace = importlib.import_module("zycelium.agents")
         for _, name, _ in _iter_namespace(namespace):
-            self._log.info("Found agent: %s", name)
+            self._log.info("Found installed agent: %s", name)
             yield name
-    
+
     async def _on_startup(self) -> None:
         """On startup."""
         self._log.info("Starting up...")
@@ -83,7 +84,8 @@ class Server(Agent):
             assert agent_name not in self._agent_processes, "Agent already running"
             self._log.info("Loading agent: %s", agent_name)
             agent_process = multiprocessing.Process(
-                target=start_agent, args=(agent_name, f"http://{self.host}:{self.port}/", self.debug)
+                target=start_agent,
+                args=(agent_name, f"http://{self.host}:{self.port}/", self.debug),
             )
             agent_process.start()
             self._agent_processes[agent_name] = agent_process
@@ -92,7 +94,7 @@ class Server(Agent):
         """On shutdown."""
         self._log.info("Shutting down...")
         await self.stop()
-    
+
     async def _on_connect(self, sid: str, _environ: dict) -> None:
         """On connect."""
         self._log.info("Client connected: %s", sid)
@@ -100,13 +102,13 @@ class Server(Agent):
     async def _on_disconnect(self, sid: str) -> None:
         """On disconnect."""
         self._log.info("Client disconnected: %s", sid)
-    
+
     async def _on_event(self, kind: str, sid: str, frame: dict) -> None:
         """On event."""
         frame["timestamp"] = await self._get_timestamp()
         await self._sio.emit(kind, frame, skip_sid=sid, namespace="/")
         self._log.info("Client event: %s %s %s", sid, kind, frame)
-    
+
     async def _get_timestamp(self) -> str:
         """Get timestamp."""
         return datetime.now().isoformat()
