@@ -168,3 +168,12 @@ class Agent:
     async def emit(self, event: str, data: dict) -> None:
         """Emit event."""
         await self._sio.emit(event=event, data=data)
+
+    def on(self, event: str):  # pylint: disable=invalid-name
+        """Event handler."""
+
+        def decorator(func):
+            self._sio.on(event, func)
+            return func
+
+        return decorator
