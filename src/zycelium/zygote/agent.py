@@ -167,7 +167,6 @@ class Agent:
 
     async def emit(self, name: str, data: dict) -> None:
         """Emit event."""
-        # construct frame
         frame = {"kind": "event", "name": name, "data": data}
         await self._sio.emit("event", data=frame)
 
