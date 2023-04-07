@@ -5,6 +5,7 @@ import asyncio
 import importlib
 import multiprocessing
 import pkgutil
+from datetime import datetime
 from typing import Iterable
 import socketio
 import uvicorn
@@ -93,9 +94,15 @@ class Server(Agent):
         """On disconnect."""
         self._log.info("Client disconnected: %s", sid)
     
-    async def _on_event(self, sid: str, event: str, data: dict) -> None:
+    async def _on_event(self, name: str, sid: str,  data: dict) -> None:
         """On event."""
-        self._log.info("Client event: %s %s %s", sid, event, data)
+        data["timestamp"] = await self._get_timestamp()
+        await self.emit(name, data)
+        self._log.info("Client event: %s %s %s", sid, name, data)
+    
+    async def _get_timestamp(self) -> str:
+        """Get timestamp."""
+        return datetime.now().isoformat()
 
     async def start(  # pylint: disable=arguments-differ
         self, host: str, port: int
