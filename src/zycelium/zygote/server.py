@@ -94,11 +94,11 @@ class Server(Agent):
         """On disconnect."""
         self._log.info("Client disconnected: %s", sid)
     
-    async def _on_event(self, name: str, sid: str,  data: dict) -> None:
+    async def _on_event(self, kind: str, sid: str, frame: dict) -> None:
         """On event."""
-        data["timestamp"] = await self._get_timestamp()
-        await self.emit(name, data)
-        self._log.info("Client event: %s %s %s", sid, name, data)
+        frame["timestamp"] = await self._get_timestamp()
+        await self._sio.emit(kind, frame)
+        self._log.info("Client event: %s %s %s", sid, kind, frame)
     
     async def _get_timestamp(self) -> str:
         """Get timestamp."""

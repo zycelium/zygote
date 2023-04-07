@@ -165,9 +165,11 @@ class Agent:
         await self._sio.disconnect()
         self._log.info("Agent stopped.")
 
-    async def emit(self, event: str, data: dict) -> None:
+    async def emit(self, name: str, data: dict) -> None:
         """Emit event."""
-        await self._sio.emit(event=event, data=data)
+        # construct frame
+        frame = {"kind": "event", "name": name, "data": data}
+        await self._sio.emit("event", data=frame)
 
     def on(self, event: str):  # pylint: disable=invalid-name
         """Event handler."""
