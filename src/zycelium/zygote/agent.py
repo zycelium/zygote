@@ -150,7 +150,6 @@ class Agent:
         self._log.info("Starting agent...")
         await asyncio.sleep(delay)
         self._start_scheduler()
-        self._log.info("Connecting to %s... with auth %s", url, auth)
         await self._sio.connect(url, auth=auth)
         self._log.info("Agent started.")
         if self._on_startup_handler:
