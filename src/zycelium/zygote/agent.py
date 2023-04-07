@@ -61,7 +61,7 @@ class Agent:
             else:
                 raise TypeError("on_startup decorator must be used with a coroutine")
             return func
-        
+
         return wrapper
 
     def on_interval(
@@ -170,11 +170,24 @@ class Agent:
         frame = {"kind": "event", "name": name, "data": data}
         await self._sio.emit("event", data=frame)
 
-    def on(self, event: str):  # pylint: disable=invalid-name
+    def on(self, name: str):  # pylint: disable=invalid-name
+        """Frame handler."""
+
+        def decorator(func):
+            self._sio.on(name, func)
+            return func
+
+        return decorator
+
+    def on_event(self, name: str):
         """Event handler."""
 
         def decorator(func):
-            self._sio.on(event, func)
+            async def wrapper(kind, frame):
+                if kind == "event" and frame["name"] == name:
+                    await func(frame)
+
+            self._sio.on(name, wrapper)
             return func
 
         return decorator
