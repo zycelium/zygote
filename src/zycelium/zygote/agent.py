@@ -16,7 +16,7 @@ class Agent:
         self.name = name
         self.debug = debug
         self.config = {}
-        self._log = None  # type: Optional[logging.Logger]
+        self._log = None  # type: logging.Logger  # type: ignore
         self._sio = self._init_sio()
         self._scheduler = self._init_scheduler()
         self._on_startup_handler = None
