@@ -11,8 +11,8 @@ agent.config = {
 }
 
 
-@agent.on("*")
-async def log_to_file(_kind, frame):
+@agent.on_event("*")
+async def log_to_file(frame):
     """Log frames to file."""
     with open(agent.config["log_file"], "a", encoding="utf-8") as file:
         file.write(json.dumps(frame) + "\n")
