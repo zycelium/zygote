@@ -12,7 +12,7 @@ agent.config = {
 
 
 @agent.on("*")
-async def log_to_file(name, data):
+async def log_to_file(_kind, frame):
     """Log events to file."""
     with open(agent.config["log_file"], "a", encoding="utf-8") as file:
-        file.write(json.dumps({"kind": "event", "name": name, "data": data}) + "\n")
+        file.write(json.dumps(frame) + "\n")
