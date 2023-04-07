@@ -6,7 +6,8 @@ from zycelium.zygote.agent import Agent
 agent = Agent(name="example", debug=True)
 
 
-@agent.on_interval(seconds=5)
+@agent.on_startup(delay=1)
+@agent.on_interval(minutes=1)
 async def example():
     """Example function."""
-    await agent.emit(event="example", data={"message": "Hello, world!"})
+    await agent.emit("example", {"message": "Hello, world!"})
