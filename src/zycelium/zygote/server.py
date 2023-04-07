@@ -108,7 +108,7 @@ class Server(Agent):
         self._log.info("Shutting down...")
         await self.stop()
 
-    async def _on_connect(self, sid: str, environ: dict, auth: dict) -> None:
+    async def _on_connect(self, sid: str, _environ: dict, auth: dict) -> None:
         """On connect."""
         self._log.info("Client connected: %s %s", sid, auth)
         if auth.get("token") != self._agents.get(auth.get("agent"), {}).get("auth", {}).get("token"):
