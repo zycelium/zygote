@@ -3,6 +3,7 @@ Zygote server agent.
 """
 import asyncio
 import importlib
+import json
 import multiprocessing
 import pkgutil
 from datetime import datetime
@@ -165,6 +166,21 @@ class Server(Agent):
         else:
             self._log.info("Client command (skipped): %s %s", sid, frame)
             return {}
+
+    async def _load_agent_config(self, agent_name: str) -> dict:
+        """Load agent config."""
+        config_path = self.config_path.joinpath(f"{agent_name}.json")
+        if config_path.exists():
+            with config_path.open("r", encoding="utf-8") as config_file:
+                return json.load(config_file)
+        else:
+            return {}
+    
+    async def _save_agent_config(self, agent_name: str, config: dict) -> None:
+        """Save agent config."""
+        config_path = self.config_path.joinpath(f"{agent_name}.json")
+        with config_path.open("w", encoding="utf-8") as config_file:
+            json.dump(config, config_file, indent=2)
 
     async def _get_timestamp(self) -> str:
         """Get timestamp."""
