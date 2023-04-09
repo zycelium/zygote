@@ -20,6 +20,7 @@ async-signals = "^0.1.5"
 aiohttp = "^3.8.4"
 sunnyside = "^2.0.0"
 requests = "^2.28.2"
+pyopenssl = "^23.1.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.2"
