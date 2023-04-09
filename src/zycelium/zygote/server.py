@@ -62,6 +62,7 @@ class Server(Agent):
         self._sio.on(event="*", namespace="/")(self._on_event)
         self._quart_app.route("/")(self._http_index)
         self._agents = {}
+        self._agents_sid = {}
         self._agent_processes = {}
 
     def _init_sio(self) -> socketio.AsyncServer:
@@ -139,17 +140,27 @@ class Server(Agent):
 
     async def _on_connect(self, sid: str, _environ: dict, auth: dict) -> None:
         """On connect."""
-        self._log.info("Client connected: %s %s", sid, auth)
-        if auth.get("token") != self._agents.get(auth.get("agent"), {}).get(
-            "auth", {}
-        ).get("token"):
+        agent_name = auth.get("agent", "")
+        agent_info = self._agents.get(agent_name, {})
+        agent_auth = agent_info.get("auth", {})
+        self._log.info("Client connected: %s as sid %s", agent_name, sid)
+        if agent_name in self._agents and auth.get("token") == agent_auth["token"]:
+            self._log.info("Client authenticated: %s", agent_name)
+            self._agents[agent_name]["sid"] = sid
+            self._agents_sid[sid] = agent_name
+        else:
             self._log.info("Client authentication failed: %s", sid)
-            await self._sio.disconnect(sid=sid, namespace="/")
-            return
+            await self._sio.disconnect(sid=sid)
+        
 
     async def _on_disconnect(self, sid: str) -> None:
         """On disconnect."""
-        self._log.info("Client disconnected: %s", sid)
+        agent_name = self._agents_sid.pop(sid, None)
+        if agent_name:
+            self._log.info("Client disconnected: %s", agent_name)
+            self._agents.pop(agent_name, None)
+        else:
+            self._log.info("Client disconnected: %s", sid)
 
     async def _on_event(self, kind: str, sid: str, frame: dict) -> None:
         """On event."""
@@ -162,6 +173,12 @@ class Server(Agent):
         if frame["name"] == "config":
             frame["timestamp"] = await self._get_timestamp()
             self._log.info("Client command: %s %s", sid, frame)
+            agent_name = self._agents_sid[sid]
+            agent_config = await self._load_agent_config(agent_name)
+            if agent_config:
+                frame["data"] = agent_config
+            else:
+                await self._save_agent_config(agent_name, frame["data"])
             return frame
         else:
             self._log.info("Client command (skipped): %s %s", sid, frame)
