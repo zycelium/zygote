@@ -147,12 +147,12 @@ class Agent:
     async def start(self, url: str, debug: bool = False, delay: float = 1, auth: Optional[dict] = None) -> None:
         """Start the agent."""
         self._log = self._init_log(name=self.name, debug=debug)
-        self._log.info("Starting agent...")
         await asyncio.sleep(delay)
-        self._start_scheduler()
+        self._log.info("Starting agent...")
         await self._sio.connect(url, auth=auth)
         await self._init_config()
         self._log.info("Agent started.")
+        self._start_scheduler()
         if self._on_startup_handler:
             await self._on_startup_handler()  # type: ignore
         while True:
