@@ -45,7 +45,7 @@ class ZygoteApp:
     def open_browser(self, _sender):
         """Open browser"""
         if self.process and self.process.is_alive():
-            webbrowser.open(f"http://{self.host}:{self.port}/")
+            webbrowser.open(f"https://{self.host}:{self.port}/")
         else:
             rumps.alert("Server not running", "Please start the server.")
 
