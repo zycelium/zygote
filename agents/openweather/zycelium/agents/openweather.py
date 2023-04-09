@@ -31,6 +31,7 @@ async def validate_config():
             "openweather/error", {"message": "Units must be metric or imperial."}
         )
         return False
+    return True
 
 
 @agent.on_startup(delay=1)
