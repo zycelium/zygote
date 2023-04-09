@@ -5,7 +5,6 @@ import click
 from zycelium.zygote.server import Server
 
 
-
 @click.group()
 def main():
     """Zygote Server"""
@@ -31,7 +30,6 @@ def config(agent):
         click.edit(filename=str(config_file))
     else:
         click.echo(f"Config file for agent {agent} does not exist.")
-
 
 
 if __name__ == "__main__":

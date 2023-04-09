@@ -144,7 +144,13 @@ class Agent:
 
         return decorator
 
-    async def start(self, url: str, debug: bool = False, delay: float = 1, auth: Optional[dict] = None) -> None:
+    async def start(
+        self,
+        url: str,
+        debug: bool = False,
+        delay: float = 1,
+        auth: Optional[dict] = None,
+    ) -> None:
         """Start the agent."""
         self._log = self._init_log(name=self.name, debug=debug)
         await asyncio.sleep(delay)
@@ -195,6 +201,11 @@ class Agent:
 
     async def _init_config(self) -> None:
         """Initialize config."""
-        frame = await self._sio.call("command", {"kind": "command", "name": "config", "data": self.config}, namespace="/", timeout=10)
+        frame = await self._sio.call(
+            "command",
+            {"kind": "command", "name": "config", "data": self.config},
+            namespace="/",
+            timeout=10,
+        )
         self.config = frame["data"]
         self._log.info("Config initialized: %s", self.config)

@@ -151,7 +151,6 @@ class Server(Agent):
         else:
             self._log.info("Client authentication failed: %s", sid)
             await self._sio.disconnect(sid=sid)
-        
 
     async def _on_disconnect(self, sid: str) -> None:
         """On disconnect."""
@@ -192,7 +191,7 @@ class Server(Agent):
                 return json.load(config_file)
         else:
             return {}
-    
+
     async def _save_agent_config(self, agent_name: str, config: dict) -> None:
         """Save agent config."""
         config_path = self.config_path.joinpath(f"{agent_name}.json")
