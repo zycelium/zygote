@@ -34,7 +34,7 @@ async def validate_config():
     return True
 
 
-@agent.on_startup(delay=1)
+# @agent.on_startup(delay=1)
 @agent.on_interval(minutes=10)
 async def weather():
     """Update weather periodically."""
