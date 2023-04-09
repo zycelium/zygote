@@ -18,7 +18,9 @@ from quart_cors import cors
 from zycelium.zygote.agent import Agent
 
 
-def start_agent(name: str, url: str, debug: bool = False, auth: Optional[dict] = None) -> socketio.AsyncClient:
+def start_agent(
+    name: str, url: str, debug: bool = False, auth: Optional[dict] = None
+) -> socketio.AsyncClient:
     """Start agent."""
     agent_module = importlib.import_module(name)
     try:
@@ -111,7 +113,9 @@ class Server(Agent):
     async def _on_connect(self, sid: str, _environ: dict, auth: dict) -> None:
         """On connect."""
         self._log.info("Client connected: %s %s", sid, auth)
-        if auth.get("token") != self._agents.get(auth.get("agent"), {}).get("auth", {}).get("token"):
+        if auth.get("token") != self._agents.get(auth.get("agent"), {}).get(
+            "auth", {}
+        ).get("token"):
             self._log.info("Client authentication failed: %s", sid)
             await self._sio.disconnect(sid=sid, namespace="/")
             return
