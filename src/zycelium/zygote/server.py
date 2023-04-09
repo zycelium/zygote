@@ -7,15 +7,17 @@ import multiprocessing
 import pkgutil
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Tuple
 from uuid import uuid4
 
+import click
 import socketio
 import uvicorn
 from quart import Quart, render_template
 from quart_cors import cors
 
 from zycelium.zygote.agent import Agent
+from zycelium.zygote.tls_cert import generate_self_signed_cert
 
 
 def start_agent(
@@ -44,9 +46,10 @@ class Server(Agent):
         self.port = 0
         self._allow_origin = allow_origin
         super().__init__(name=name, debug=debug)
-        self._base_path = Path(__file__).parent
+        self.config_path = self._config_dir()
+        self.resources_path = self._resources_dir()
         self._quart_app = Quart(
-            self.name, template_folder=str(self._base_path.joinpath("templates"))
+            self.name, template_folder=str(self.resources_path.joinpath("templates")),
         )
         self._quart_app = cors(self._quart_app, allow_origin=self._allow_origin)
         self._quart_app.config["DEBUG"] = self.debug
@@ -56,7 +59,6 @@ class Server(Agent):
         self._sio.on(event="connect", namespace="/")(self._on_connect)
         self._sio.on(event="disconnect", namespace="/")(self._on_disconnect)
         self._sio.on(event="*", namespace="/")(self._on_event)
-        # self._quart_app.template_folder = "templates"
         self._quart_app.route("/")(self._http_index)
         self._agents = {}
         self._agent_processes = {}
@@ -66,6 +68,25 @@ class Server(Agent):
             async_mode="asgi", cors_allowed_origins=self._allow_origin
         )
         return sio
+    
+    def _resources_dir(self) -> Path:
+        return Path(__file__).parent
+
+    def _config_dir(self) -> Path:
+        """Ensure config directory."""
+        config_path = Path(click.get_app_dir("zygote"))
+        config_path.mkdir(exist_ok=True)
+        return config_path
+
+    def _ensure_tls_cert(self) -> Tuple[Path, Path]:
+        """Ensure TLS certificate."""
+        cert_path = self.config_path.joinpath("cert.pem")
+        key_path = self.config_path.joinpath("key.pem")
+        if not cert_path.exists() or not key_path.exists():
+            self._log.info("Generating self-signed TLS certificate...")
+            generate_self_signed_cert(cert_path, key_path)
+        self._log.info("Using TLS certificate: %s", cert_path)
+        return cert_path, key_path
 
     def _discover_agents(self) -> Iterable[str]:
         """Discover agents."""
@@ -100,7 +121,7 @@ class Server(Agent):
             self._agents[agent_name] = {"auth": auth}
             agent_process = multiprocessing.Process(
                 target=start_agent,
-                args=(agent_name, f"http://{self.host}:{self.port}/", self.debug, auth),
+                args=(agent_name, f"https://{self.host}:{self.port}/", self.debug, auth),
             )
             agent_process.start()
             self._agent_processes[agent_name] = agent_process
@@ -146,12 +167,15 @@ class Server(Agent):
         self.port = port
         self._log = self._init_log(name=self.name, debug=self.debug)
         self._log.info("Starting server...")
+        tls_cert, tls_key = self._ensure_tls_cert()
         self._start_scheduler()
         uvconfig = uvicorn.Config(
             self._sio_app,
             host=self.host,
             port=self.port,
             log_level="debug" if self.debug else "info",
+            ssl_keyfile=str(tls_key),
+            ssl_certfile=str(tls_cert),
         )
         server = uvicorn.Server(config=uvconfig)
         try:
