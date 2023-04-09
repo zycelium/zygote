@@ -58,6 +58,7 @@ class Server(Agent):
         self._quart_app.after_serving(self._on_shutdown)
         self._sio.on(event="connect", namespace="/")(self._on_connect)
         self._sio.on(event="disconnect", namespace="/")(self._on_disconnect)
+        self._sio.on(event="command", namespace="/")(self._on_command)
         self._sio.on(event="*", namespace="/")(self._on_event)
         self._quart_app.route("/")(self._http_index)
         self._agents = {}
@@ -150,6 +151,17 @@ class Server(Agent):
         frame["timestamp"] = await self._get_timestamp()
         await self._sio.emit(kind, frame, skip_sid=sid, namespace="/")
         self._log.info("Client event: %s %s %s", sid, kind, frame)
+    
+    async def _on_command(self, sid: str, frame: dict) -> dict:
+        """On command."""
+        if frame["name"] == "config":
+            frame["timestamp"] = await self._get_timestamp()
+            self._log.info("Client command: %s %s", sid, frame)
+            return frame
+        else:
+            self._log.info("Client command (skipped): %s %s", sid, frame)
+            return {}
+
 
     async def _get_timestamp(self) -> str:
         """Get timestamp."""

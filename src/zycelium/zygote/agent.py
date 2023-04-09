@@ -151,6 +151,7 @@ class Agent:
         await asyncio.sleep(delay)
         self._start_scheduler()
         await self._sio.connect(url, auth=auth)
+        await self._init_config()
         self._log.info("Agent started.")
         if self._on_startup_handler:
             await self._on_startup_handler()  # type: ignore
@@ -191,3 +192,9 @@ class Agent:
             return func
 
         return decorator
+
+    async def _init_config(self) -> None:
+        """Initialize config."""
+        frame = await self._sio.call("command", {"kind": "command", "name": "config", "data": self.config}, namespace="/", timeout=10)
+        self.config = frame["data"]
+        self._log.info("Config initialized: %s", self.config)
