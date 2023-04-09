@@ -20,9 +20,7 @@ from zycelium.zygote.agent import Agent
 from zycelium.zygote.tls_cert import generate_self_signed_cert
 
 
-def start_agent(
-    name: str, url: str, debug: bool = False, auth: Optional[dict] = None
-):
+def start_agent(name: str, url: str, debug: bool = False, auth: Optional[dict] = None):
     """Start agent."""
     agent_module = importlib.import_module(name)
     try:
@@ -49,7 +47,8 @@ class Server(Agent):
         self.config_path = self._config_dir()
         self.resources_path = self._resources_dir()
         self._quart_app = Quart(
-            self.name, template_folder=str(self.resources_path.joinpath("templates")),
+            self.name,
+            template_folder=str(self.resources_path.joinpath("templates")),
         )
         self._quart_app = cors(self._quart_app, allow_origin=self._allow_origin)
         self._quart_app.config["DEBUG"] = self.debug
@@ -69,7 +68,7 @@ class Server(Agent):
             async_mode="asgi", cors_allowed_origins=self._allow_origin
         )
         return sio
-    
+
     def _resources_dir(self) -> Path:
         return Path(__file__).parent
 
@@ -122,7 +121,12 @@ class Server(Agent):
             self._agents[agent_name] = {"auth": auth}
             agent_process = multiprocessing.Process(
                 target=start_agent,
-                args=(agent_name, f"https://{self.host}:{self.port}/", self.debug, auth),
+                args=(
+                    agent_name,
+                    f"https://{self.host}:{self.port}/",
+                    self.debug,
+                    auth,
+                ),
             )
             agent_process.start()
             self._agent_processes[agent_name] = agent_process
@@ -151,7 +155,7 @@ class Server(Agent):
         frame["timestamp"] = await self._get_timestamp()
         await self._sio.emit(kind, frame, skip_sid=sid, namespace="/")
         self._log.info("Client event: %s %s %s", sid, kind, frame)
-    
+
     async def _on_command(self, sid: str, frame: dict) -> dict:
         """On command."""
         if frame["name"] == "config":
@@ -161,7 +165,6 @@ class Server(Agent):
         else:
             self._log.info("Client command (skipped): %s %s", sid, frame)
             return {}
-
 
     async def _get_timestamp(self) -> str:
         """Get timestamp."""
