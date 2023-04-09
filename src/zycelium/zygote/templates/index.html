@@ -10,9 +10,10 @@
 <body>
   <div class="container">
     <h1>Zygote</h1>
-    {% for agent in agents.values() %}
+    {% for name, info in agents.items() %}
     <div class="agent">
-      <h2>{{ agent.name }}</h2>
+      <h2>{{ name }}</h2>
+      <p>{{ info['config'] }}</p>
     {% endfor %}
   </div>
 </body>

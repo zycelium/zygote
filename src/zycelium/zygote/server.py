@@ -147,6 +147,8 @@ class Server(Agent):
         if agent_name in self._agents and auth.get("token") == agent_auth["token"]:
             self._log.info("Client authenticated: %s", agent_name)
             self._agents[agent_name]["sid"] = sid
+            self._agents[agent_name]["auth"] = auth
+            self._agents[agent_name]["config"] = {}
             self._agents_sid[sid] = agent_name
         else:
             self._log.info("Client authentication failed: %s", sid)
@@ -178,6 +180,7 @@ class Server(Agent):
                 frame["data"] = agent_config
             else:
                 await self._save_agent_config(agent_name, frame["data"])
+            self._agents[agent_name]["config"] = frame["data"]
             return frame
         else:
             self._log.info("Client command (skipped): %s %s", sid, frame)
