@@ -22,7 +22,7 @@ class Agent:
         self._on_startup_handler = None
 
     def _init_sio(self) -> socketio.AsyncClient:
-        sio = socketio.AsyncClient()
+        sio = socketio.AsyncClient(ssl_verify=False)
         return sio
 
     def _init_log(self, name: str, debug: bool) -> logging.Logger:
