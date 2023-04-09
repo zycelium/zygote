@@ -22,7 +22,7 @@ from zycelium.zygote.tls_cert import generate_self_signed_cert
 
 def start_agent(
     name: str, url: str, debug: bool = False, auth: Optional[dict] = None
-) -> socketio.AsyncClient:
+):
     """Start agent."""
     agent_module = importlib.import_module(name)
     try:
