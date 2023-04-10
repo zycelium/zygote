@@ -1,67 +1,39 @@
 """
 Database models.
 """
-from tortoise.models import Model
 from tortoise import Tortoise, fields
+from tortoise.models import Model
+from tortoise.contrib.pydantic.creator import (
+    pydantic_model_creator,
+    pydantic_queryset_creator,
+)
 
 from zycelium.zygote.signals import database_init
-
 
 
 class Frame(Model):
     """Frame model"""
 
-    uuid = fields.UUIDField(pk=True)
-    kind = fields.CharField(max_length=16)
-    name = fields.CharField(max_length=64)
-    data = fields.JSONField()
-    space = fields.ForeignKeyField("models.Space", related_name="frames")
-    sender = fields.ForeignKeyField("models.Agent", related_name="frames")
-    timestamp = fields.DatetimeField(auto_now_add=True)
+    uuid = fields.UUIDField(pk=True, index=True)
+    kind = fields.CharField(max_length=16, index=True, default="event")
+    name = fields.CharField(max_length=64, index=True, null=False)
+    data = fields.JSONField(default={})
+    meta = fields.JSONField(default={})
+    time = fields.DatetimeField(auto_now_add=True, index=True)
 
     def __str__(self) -> str:
         return f"{self.kind}({self.name})"
 
-
-class Space(Model):
-    """Space model"""
-
-    uuid = fields.UUIDField(pk=True)
-    name = fields.CharField(max_length=64, unique=True)
-    description = fields.TextField(null=True)
-    created = fields.DatetimeField(auto_now_add=True)
-    updated = fields.DatetimeField(auto_now=True)
-
-    def __str__(self) -> str:
-        return f"{self.name}"
-
-
-class Agent(Model):
-    """Agent model"""
-
-    uuid = fields.UUIDField(pk=True)
-    name = fields.CharField(max_length=64, unique=True)
-    description = fields.TextField(null=True)
-    created = fields.DatetimeField(auto_now_add=True)
-    updated = fields.DatetimeField(auto_now=True)
-
-    def __str__(self) -> str:
-        return f"{self.name}"
-
-
-class AgentSpace(Model):
-    """AgentSpace model"""
-
-    agent = fields.ForeignKeyField("models.Agent", related_name="spaces")
-    space = fields.ForeignKeyField("models.Space", related_name="agents")
-
     class Meta:
         """Meta class"""
 
-        unique_together = ("agent", "space")
+        table = "frame"
+        ordering = ["-time"]
 
-    def __str__(self) -> str:
-        return f"{self.agent} in {self.space}"
+
+PydanticFrame = pydantic_model_creator(Frame, name="Frame")
+PydanticFrameIn = pydantic_model_creator(Frame, name="FrameIn", exclude_readonly=True, exclude=("uuid", "time"))
+PydanticFrameList = pydantic_queryset_creator(Frame, name="FrameList")
 
 
 async def init_db(db_url: str):
@@ -74,4 +46,3 @@ async def init_db(db_url: str):
     )
     await Tortoise.generate_schemas()
     await database_init.send(f"db_init: {db_url}")
-
