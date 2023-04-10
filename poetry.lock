@@ -332,6 +332,20 @@ docs = ["pydata_sphinx_theme"]
 dotenv = ["python-dotenv"]
 
 [[package]]
+name = "quart-auth"
+version = "0.8.0"
+description = "A Quart extension to provide secure cookie authentication"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+quart = ">=0.18"
+
+[package.extras]
+docs = ["pydata_sphinx_theme"]
+
+[[package]]
 name = "quart-cors"
 version = "0.6.0"
 description = "A Quart extension to provide Cross Origin Resource Sharing, access control, support"
@@ -416,7 +430,7 @@ h11 = ">=0.9.0,<1"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "b2dfb5fb721bdb29bb03f87057d948b0083c0d9d7f3c2add881a35bce0473fae"
+content-hash = "b607070520b003c891edca0cc10be569a1278ae85b4deca6967fbde25b5254b8"
 
 [metadata.files]
 aiofiles = [
@@ -625,6 +639,10 @@ pytz = [
 quart = [
     {file = "quart-0.18.4-py3-none-any.whl", hash = "sha256:578a466bcd8c58b947b384ca3517c2a2f3bfeec8f58f4ff5038d4506ffee6be7"},
     {file = "quart-0.18.4.tar.gz", hash = "sha256:c1766f269cdb85daf9da67ba54170abf7839aca97304dcb4cd0778eabfb442c6"},
+]
+quart-auth = [
+    {file = "quart_auth-0.8.0-py3-none-any.whl", hash = "sha256:c1180c1cb5b95d780231aaad2109adc55b9fa0c7f64b5601853110bbd3fea898"},
+    {file = "quart_auth-0.8.0.tar.gz", hash = "sha256:12b1ff3c3a92845dea5c80211820ae5e9c0f7d1ef4e8ba74678aa7bd8546803c"},
 ]
 quart-cors = [
     {file = "quart_cors-0.6.0-py3-none-any.whl", hash = "sha256:a12cb8f82506be9794c7d0fba62be04f07ca719e47e0691bf7a63d5ce661b70e"},
