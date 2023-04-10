@@ -144,4 +144,7 @@ class Supervisor:
                 if not process.is_alive():
                     self.log.error("Process %s died", process.name)
                     process.start()
-            await asyncio.sleep(1)
+            try:
+                await asyncio.sleep(1)
+            except asyncio.CancelledError:
+                break
