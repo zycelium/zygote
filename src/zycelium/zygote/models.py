@@ -11,6 +11,18 @@ from tortoise.contrib.pydantic.creator import (
 from zycelium.zygote.signals import database_init
 
 
+async def init_db(db_url: str):
+    """Initialize database"""
+
+    Tortoise.init_models(["zycelium.zygote.models"], "models")
+    await Tortoise.init(
+        db_url=db_url,
+        modules={"models": ["zycelium.zygote.models"]},
+    )
+    await Tortoise.generate_schemas()
+    await database_init.send(f"db_init: {db_url}")
+
+
 class Frame(Model):
     """Frame model"""
 
@@ -32,17 +44,7 @@ class Frame(Model):
 
 
 PydanticFrame = pydantic_model_creator(Frame, name="Frame")
-PydanticFrameIn = pydantic_model_creator(Frame, name="FrameIn", exclude_readonly=True, exclude=("uuid", "time"))
+PydanticFrameIn = pydantic_model_creator(
+    Frame, name="FrameIn", exclude_readonly=True, exclude=("uuid", "time")
+)
 PydanticFrameList = pydantic_queryset_creator(Frame, name="FrameList")
-
-
-async def init_db(db_url: str):
-    """Initialize database"""
-
-    Tortoise.init_models(["zycelium.zygote.models"], "models")
-    await Tortoise.init(
-        db_url=db_url,
-        modules={"models": ["zycelium.zygote.models"]},
-    )
-    await Tortoise.generate_schemas()
-    await database_init.send(f"db_init: {db_url}")
