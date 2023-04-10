@@ -11,3 +11,6 @@ process_stopped = Signal()
 supervisor_started = Signal()
 supervisor_stopped = Signal()
 supervisor_cancelled = Signal()
+
+# Database signals
+database_init = Signal()
