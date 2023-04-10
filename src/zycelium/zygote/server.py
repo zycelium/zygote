@@ -37,6 +37,10 @@ from zycelium.zygote.models import (
     PydanticSpace,
     PydanticSpaceIn,
     PydanticSpaceList,
+    Agent,
+    PydanticAgent,
+    PydanticAgentIn,
+    PydanticAgentList,
 )
 from zycelium.zygote.supervisor import Supervisor
 
@@ -176,6 +180,43 @@ async def delete_space(uuid):
     return jsonify({"success": True})
 
 
+@app.route("/api/v1/agents", methods=["POST"])
+async def post_agent():
+    """Post agent."""
+    try:
+        data, redirect_url = await get_data_and_redirect_url()
+    except ValueError:
+        return jsonify({"error": "No data."}), 400
+    data = PydanticAgentIn(**data).dict()
+    agent = await Agent.create(**data)
+    pyagent = await PydanticAgent.from_tortoise_orm(agent)
+    if redirect_url:
+        return redirect(redirect_url)
+    return jsonify(pyagent.dict())
+
+
+@app.route("/api/v1/agents", methods=["GET"])
+async def get_agents():
+    """Get agents."""
+    agents = await PydanticAgentList.from_queryset(Agent.all().limit(100))
+    return jsonify(agents.dict()["__root__"])
+
+
+@app.route("/api/v1/agents/<uuid>", methods=["GET"])
+async def get_agent(uuid):
+    """Get agent."""
+    agent = await Agent.get(uuid=uuid)
+    pyagent = await PydanticAgent.from_tortoise_orm(agent)
+    return jsonify(pyagent.dict())
+
+
+@app.route("/api/v1/agents/<uuid>", methods=["DELETE"])
+async def delete_agent(uuid):
+    """Delete agent."""
+    await Agent.filter(uuid=uuid).delete()
+    return jsonify({"success": True})
+
+
 # WebUI
 
 
@@ -236,3 +277,18 @@ async def http_space(uuid):
     space = await Space.get(uuid=uuid)
     pyspace = await PydanticSpace.from_tortoise_orm(space)
     return await render_template("space.html", space=pyspace.dict())
+
+
+@app.route("/agents")
+async def http_agents():
+    """Agents route."""
+    agents = await PydanticAgentList.from_queryset(Agent.all().limit(100))
+    return await render_template("agents.html", agents=agents.dict()["__root__"])
+
+
+@app.route("/agents/<uuid>")
+async def http_agent(uuid):
+    """Agent route."""
+    agent = await Agent.get(uuid=uuid)
+    pyagent = await PydanticAgent.from_tortoise_orm(agent)
+    return await render_template("agent.html", agent=pyagent.dict())

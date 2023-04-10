@@ -78,3 +78,33 @@ PydanticSpaceIn = pydantic_model_creator(
     exclude=("uuid", "created_at", "updated_at"),
 )
 PydanticSpaceList = pydantic_queryset_creator(Space, name="SpaceList")
+
+
+class Agent(Model):
+    """Agent model"""
+
+    uuid = fields.UUIDField(pk=True, index=True)
+    name = fields.CharField(max_length=64, index=True, null=False)
+    data = fields.JSONField(default={})
+    meta = fields.JSONField(default={})
+    created_at = fields.DatetimeField(auto_now_add=True, index=True)
+    updated_at = fields.DatetimeField(auto_now=True, index=True)
+
+    def __str__(self) -> str:
+        return f"{self.name}"
+
+    class Meta:
+        """Meta class"""
+
+        table = "agent"
+        ordering = ["name"]
+
+
+PydanticAgent = pydantic_model_creator(Agent, name="Agent")
+PydanticAgentIn = pydantic_model_creator(
+    Agent,
+    name="AgentIn",
+    exclude_readonly=True,
+    exclude=("uuid", "created_at", "updated_at"),
+)
+PydanticAgentList = pydantic_queryset_creator(Agent, name="AgentList")
