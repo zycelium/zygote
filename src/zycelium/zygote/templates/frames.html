@@ -5,16 +5,28 @@
 {% block content %}
 <h2>Create Frame</h2>
 
-<form action="{{ url_for('post_frame') }}"" method=" post">
-    <select name="kind">
-        <option value="event">event</option>
-        <option value="command">command</option>
-        <option value="message">message</option>
-    </select>
-    <input type="text" name="name" placeholder="name">
-    <input type="text" name="data" placeholder="data" value="{}">
+<form action="{{ url_for('post_frame') }}"" method="post">
     <input type="hidden" name="redirect_url" value="{{ url_for('http_frames') }}">
-    <input type="submit" value="Create">
+    <span class="form-field">
+        <label for="kind">Kind</label>
+        <select name="kind">
+            <option value="event">event</option>
+            <option value="command">command</option>
+            <option value="message">message</option>
+        </select>
+    </span>
+    <span class="form-field">
+        <label for="name">Name</label>
+        <input type="text" name="name" placeholder="name">
+    </span>
+    <span class="form-field">
+        <label for="data">Data</label>
+        <input type="text" name="data" placeholder="data" value="{}">
+    </span>
+    <span class="form-buttons">
+        <input type="submit" value="Create">
+        <input type="reset" value="Cancel">
+    </span>
 </form>
 
 <h2>Frames</h2>
