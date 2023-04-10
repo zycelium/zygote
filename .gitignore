@@ -136,3 +136,4 @@ dmypy.json
 
 # App
 Zygote.app
+zygote.db
