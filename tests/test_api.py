@@ -14,7 +14,7 @@ async def app():
     await Tortoise.close_connections()
 
 
-async def test_frame_post(app):
+async def test_frame_post(app):  # pylint: disable=redefined-outer-name
     """Test frame post."""
     client = app.test_client()
     data = {"kind": "event", "name": "test", "data": {"foo": "bar"}}
