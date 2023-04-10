@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Zygote</title>
+    <meta name="color-scheme" content="dark light only">
+    <link rel="stylesheet" href="/static/style/app.css">
+    <script>
+        const theme = localStorage.getItem('theme') || 'light';
+        document.documentElement.dataset.theme = theme;
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Zygote</h1>
+        </div>
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+        <div class="footer">
+            <p>Powered by Zygote</p>
+        </div>
+    </div>
+</body>
+
+</html>

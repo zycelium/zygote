@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Zygote - Frames{% endblock %}
+
+{% block content %}
+<h2>Create Frame</h2>
+
+<form action="{{ url_for('post_frame') }}"" method=" post">
+    <select name="kind">
+        <option value="event">event</option>
+        <option value="command">command</option>
+        <option value="message">message</option>
+    </select>
+    <input type="text" name="name" placeholder="name">
+    <input type="text" name="data" placeholder="data" value="{}">
+    <input type="hidden" name="redirect_url" value="{{ url_for('http_frames') }}">
+    <input type="submit" value="Create">
+</form>
+
+<h2>Frames</h2>
+<table>
+    {% for frame in frames %}
+    <tr>
+        <td><a href="{{ url_for('http_frame', uuid=frame.uuid) }}">{{frame.name}}</a></td>
+        <td>{{frame.kind}}</td>
+        <td><code>{{frame.data}}</code></td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}
