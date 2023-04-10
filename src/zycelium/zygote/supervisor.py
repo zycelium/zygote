@@ -6,6 +6,13 @@ import multiprocessing
 from typing import Callable
 
 from zycelium.zygote.logging import get_logger
+from zycelium.zygote.signals import (
+    process_started,
+    process_stopped,
+    supervisor_started,
+    supervisor_stopped,
+    supervisor_cancelled,
+)
 
 
 class Process:
@@ -80,10 +87,12 @@ class Supervisor:
         self.log.info("Starting supervisor")
         for process in self.processes.values():
             process.start()
+            await process_started.send(process.name)
 
         self._supervise_loop_task = asyncio.get_running_loop().create_task(
             self.supervise_loop()
         )
+        await supervisor_started.send("supervisor")
         self.log.info("Started supervisor")
 
     async def stop(self) -> None:
@@ -94,10 +103,12 @@ class Supervisor:
         for process in self.processes.values():
             process.stop()
             process.join()
+            await process_stopped.send(process.name)
 
         if self._supervise_loop_task is not None:
             self._supervise_loop_task.cancel()
 
+        await supervisor_stopped.send("supervisor")
         self.log.info("Stopped supervisor")
 
     async def is_alive(self, name) -> bool:
@@ -125,6 +136,7 @@ class Supervisor:
         self.processes[name] = process
         if start:
             process.start()
+            await process_started.send(name)
 
     async def remove_process(self, name: str) -> None:
         """
@@ -134,6 +146,7 @@ class Supervisor:
             self.processes[name].stop()
             self.processes[name].join()
             del self.processes[name]
+            await process_stopped.send(name)
 
     async def supervise_loop(self) -> None:
         """
@@ -143,8 +156,11 @@ class Supervisor:
             for process in self.processes.values():
                 if not process.is_alive():
                     self.log.error("Process %s died", process.name)
+                    await process_stopped.send(process.name)
                     process.start()
+                    await process_started.send(process.name)
             try:
                 await asyncio.sleep(1)
             except asyncio.CancelledError:
+                await supervisor_cancelled.send("supervisor")
                 break
