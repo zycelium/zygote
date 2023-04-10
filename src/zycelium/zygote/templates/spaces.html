@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Zygote - Spaces{% endblock %}
+
+{% block content %}
+<details>
+    <summary>
+        Create Space
+    </summary>
+    <form action="{{ url_for('post_space') }}"" method="post">
+        <input type="hidden" name="redirect_url" value="{{ url_for('http_spaces') }}">
+        <span class="form-field">
+            <label for="name">Name</label>
+            <input type="text" name="name" placeholder="name">
+        </span>
+        <span class="form-field">
+            <label for="data">Data</label>
+            <input type="text" name="data" placeholder="data" value="{}">
+        </span>
+        <span class="form-field">
+            <label for="meta">Meta</label>
+            <input type="text" name="meta" placeholder="meta" value="{}">
+        </span>
+        <span class="form-buttons">
+            <input type="submit" value="Create">
+            <input type="reset" value="Cancel">
+        </span>
+    </form>
+    <hr />    
+</details>
+
+<h2>Spaces</h2>
+<table>
+    {% for space in spaces %}
+    <tr>
+        <td><a href="{{ url_for('http_space', uuid=space.uuid) }}">{{space.name}}</a></td>
+        <td><code>{{space.data}}</code></td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

@@ -33,6 +33,10 @@ from zycelium.zygote.models import (
     PydanticFrame,
     PydanticFrameIn,
     PydanticFrameList,
+    Space,
+    PydanticSpace,
+    PydanticSpaceIn,
+    PydanticSpaceList,
 )
 from zycelium.zygote.supervisor import Supervisor
 
@@ -76,22 +80,35 @@ async def redirect_to_login(*_: Exception) -> ResponseReturnValue:
     return redirect(url_for("http_login"))
 
 
+# Helpers
+
+
+async def get_data_and_redirect_url():
+    """Get data and redirect url."""
+    data = await request.get_json()
+    if not data:
+        data = await request.form
+    if not data:
+        raise ValueError("No data")
+    redirect_url = data.get("redirect_url", None)
+    if redirect_url:
+        # Remove redirect url parameter from immutable data.
+        data = data.copy()
+        del data["redirect_url"]
+    return data, redirect_url
+
+
 # API
 
 
 @app.route("/api/v1/frames", methods=["POST"])
 async def post_frame():
     """Post frame."""
-    data = await request.get_json()
-    if not data:
-        data = await request.form
-    if not data:
-        return jsonify({"error": "No data"}), 400
-    redirect_url = data.get("redirect_url", None)
-    if redirect_url:
-        # Remove redirect url parameter from immutable data.
-        data = data.copy()
-        del data["redirect_url"]
+    try:
+        data, redirect_url = await get_data_and_redirect_url()
+    except ValueError:
+        return jsonify({"error": "No data."}), 400
+
     data = PydanticFrameIn(**data).dict()
     frame = await Frame.create(**data)
     pyframe = await PydanticFrame.from_tortoise_orm(frame)
@@ -113,6 +130,50 @@ async def get_frame(uuid):
     frame = await Frame.get(uuid=uuid)
     pyframe = await PydanticFrame.from_tortoise_orm(frame)
     return jsonify(pyframe.dict())
+
+
+@app.route("/api/v1/frames/<uuid>", methods=["DELETE"])
+async def delete_frame(uuid):
+    """Delete frame."""
+    await Frame.filter(uuid=uuid).delete()
+    return jsonify({"success": True})
+
+
+@app.route("/api/v1/spaces", methods=["POST"])
+async def post_space():
+    """Post space."""
+    try:
+        data, redirect_url = await get_data_and_redirect_url()
+    except ValueError:
+        return jsonify({"error": "No data."}), 400
+    data = PydanticSpaceIn(**data).dict()
+    space = await Space.create(**data)
+    pyspace = await PydanticSpace.from_tortoise_orm(space)
+    if redirect_url:
+        return redirect(redirect_url)
+    return jsonify(pyspace.dict())
+
+
+@app.route("/api/v1/spaces", methods=["GET"])
+async def get_spaces():
+    """Get spaces."""
+    spaces = await PydanticSpaceList.from_queryset(Space.all().limit(100))
+    return jsonify(spaces.dict()["__root__"])
+
+
+@app.route("/api/v1/spaces/<uuid>", methods=["GET"])
+async def get_space(uuid):
+    """Get space."""
+    space = await Space.get(uuid=uuid)
+    pyspace = await PydanticSpace.from_tortoise_orm(space)
+    return jsonify(pyspace.dict())
+
+
+@app.route("/api/v1/spaces/<uuid>", methods=["DELETE"])
+async def delete_space(uuid):
+    """Delete space."""
+    await Space.filter(uuid=uuid).delete()
+    return jsonify({"success": True})
 
 
 # WebUI
@@ -160,3 +221,18 @@ async def http_frame(uuid):
     frame = await Frame.get(uuid=uuid)
     pyframe = await PydanticFrame.from_tortoise_orm(frame)
     return await render_template("frame.html", frame=pyframe.dict())
+
+
+@app.route("/spaces")
+async def http_spaces():
+    """Spaces route."""
+    spaces = await PydanticSpaceList.from_queryset(Space.all().limit(100))
+    return await render_template("spaces.html", spaces=spaces.dict()["__root__"])
+
+
+@app.route("/spaces/<uuid>")
+async def http_space(uuid):
+    """Space route."""
+    space = await Space.get(uuid=uuid)
+    pyspace = await PydanticSpace.from_tortoise_orm(space)
+    return await render_template("space.html", space=pyspace.dict())
