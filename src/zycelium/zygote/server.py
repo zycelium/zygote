@@ -60,4 +60,4 @@ async def index():
 @app.route("/processes")
 async def processes():
     """List processes."""
-    return {"processes": name for name in sup.processes}
+    return {"processes": list(sup.processes)}
