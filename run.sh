@@ -1,3 +1,3 @@
 #!/bin/sh
 
-uvicorn zycelium.zygote.server:app
+uvicorn --port 3965 zycelium.zygote.server:app
