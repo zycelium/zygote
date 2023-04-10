@@ -1,10 +1,10 @@
 """
 Zygote server.
 """
-import logging
 from quart import Quart
 from quart_cors import cors
 
+from zycelium.zygote.logging import get_logger
 from zycelium.zygote.supervisor import Supervisor
 
 app = Quart(__name__)
@@ -12,13 +12,7 @@ app = cors(app, allow_origin="*")
 
 sup = Supervisor()
 
-log = logging.getLogger("zygote.server")
-log.setLevel(logging.DEBUG)
-log.propagate = True
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-handler = logging.StreamHandler()
-handler.setFormatter(formatter)
-log.addHandler(handler)
+log = get_logger("zygote.server")
 
 
 def dummy_process(name) -> None:
@@ -28,12 +22,7 @@ def dummy_process(name) -> None:
     import time
     import random
 
-    log_ = logging.getLogger(f"zygote.{name}")
-    log_.setLevel(logging.DEBUG)
-    log_.propagate = True
-    handler_ = logging.StreamHandler()
-    handler_.setFormatter(formatter)
-    log_.addHandler(handler_)
+    log_ = get_logger(f"zygote.dummy.{name}")
     try:
         while True:
             if random.randint(0, 10) == 2:

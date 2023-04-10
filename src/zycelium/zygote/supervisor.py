@@ -2,9 +2,10 @@
 Supervisor for processes using multiprocessing.
 """
 import asyncio
-import logging
 import multiprocessing
 from typing import Callable
+
+from zycelium.zygote.logging import get_logger
 
 
 class Process:
@@ -18,9 +19,7 @@ class Process:
         self.args = args
         self.kwargs = kwargs
         self.process = None
-        self.log = logging.getLogger(f"zygote.supervisor.process.{self.name}")
-        self.log.setLevel(logging.DEBUG)
-
+        self.log = get_logger(f"zygote.supervisor.process.{self.name}")
 
     def start(self) -> None:
         """
@@ -70,15 +69,8 @@ class Supervisor:
     """
 
     def __init__(self):
-        self.processes = {}  # type: dict[str, Process]
-        self.log = logging.getLogger("zygote.supervisor")
-        self.log.setLevel(logging.DEBUG)
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
-        handler = logging.StreamHandler()
-        handler.setFormatter(formatter)
-        self.log.addHandler(handler)
+        self.processes = {}  # type: dict[str, Process]  # type: ignore
+        self.log = get_logger("zygote.supervisor")
         self._supervise_loop_task = None
 
     async def start(self) -> None:
@@ -105,7 +97,7 @@ class Supervisor:
 
         if self._supervise_loop_task is not None:
             self._supervise_loop_task.cancel()
-        
+
         self.log.info("Stopped supervisor")
 
     async def is_alive(self, name) -> bool:
@@ -117,7 +109,12 @@ class Supervisor:
         return self.processes[name].is_alive()
 
     async def add_process(
-        self, name: str, function: Callable, *args, start: bool = False, **kwargs,
+        self,
+        name: str,
+        function: Callable,
+        *args,
+        start: bool = False,
+        **kwargs,
     ) -> None:
         """
         Add a process to the supervisor.
