@@ -13,6 +13,23 @@
         <div class="header">
             <h1>Zygote</h1>
         </div>
+        {% if current_user.is_authenticated %}
+        <nav>
+            <ul>
+                <li>
+                    <button><a class="button" href="{{ url_for('http_index') }}">Home</a></button>
+                </li>
+                <li>
+                    <button><a class="button" href="{{ url_for('http_frames') }}">Frames</a></button>
+                </li>
+                <li>
+                    <form action="/logout" method="post">
+                        <input type="submit" value="Logout" />
+                    </form>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
         <hr />
         <div class="content">
             {% block content %}{% endblock %}

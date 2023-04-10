@@ -1,11 +1,29 @@
 """
 Zygote server.
 """
+from os import environ
 from pathlib import Path
 
 from tortoise import Tortoise
 from click import get_app_dir
-from quart import Quart, request, jsonify, render_template, redirect
+from quart import (
+    Quart,
+    ResponseReturnValue,
+    request,
+    jsonify,
+    render_template,
+    redirect,
+    url_for,
+)
+from quart_auth import (
+    AuthManager,
+    AuthUser,
+    Unauthorized,
+    login_required,
+    login_user,
+    logout_user,
+    current_user,
+)
 from quart_cors import cors
 
 from zycelium.zygote.logging import get_logger
@@ -18,10 +36,17 @@ from zycelium.zygote.models import (
 )
 from zycelium.zygote.supervisor import Supervisor
 
+ZYGOTE_SECRET_KEY = environ.get("ZYGOTE_SECRET_KEY", None)
+if not ZYGOTE_SECRET_KEY:
+    raise ValueError("ZYGOTE_SECRET_KEY not set")
+
 app = Quart(__name__)
+app.secret_key = ZYGOTE_SECRET_KEY
+
+quart_auth = AuthManager(app)
 app = cors(app, allow_origin="*")
 app_dir = Path(get_app_dir("zygote"))
-app_db_path = str("zygote.db")  # pylint: disable=invalid-name
+app_db_path = "zygote.db"  # pylint: disable=invalid-name
 
 sup = Supervisor()
 log = get_logger("zygote.server")
@@ -43,6 +68,12 @@ async def after_serving():
     log.info("Stopping server")
     await Tortoise.close_connections()
     await sup.stop()
+
+
+@app.errorhandler(Unauthorized)
+async def redirect_to_login(*_: Exception) -> ResponseReturnValue:
+    """Redirect to login."""
+    return redirect(url_for("http_login"))
 
 
 # API
@@ -88,9 +119,32 @@ async def get_frame(uuid):
 
 
 @app.route("/")
+@login_required
 async def http_index():
     """Index route."""
-    return await render_template("index.html")
+    return await render_template("index.html", user=current_user)
+
+
+@app.route("/login", methods=["GET", "POST"])
+async def http_login():
+    """Login route."""
+    if request.method == "POST":
+        form = await request.form
+        username = form.get("username")
+        password = form.get("password")
+        if username == "admin" and password == "admin":
+            login_user(AuthUser(auth_id="1"))
+            return redirect("/")
+        return "Bad username or password", 401
+    return await render_template("login.html")
+
+
+@app.route("/logout", methods=["POST"])
+@login_required
+async def http_logout():
+    """Logout route."""
+    logout_user()
+    return redirect("/")
 
 
 @app.route("/frames")
