@@ -7,6 +7,14 @@ optional = false
 python-versions = ">=3.7,<4.0"
 
 [[package]]
+name = "async-signals"
+version = "0.1.5"
+description = "Async version of the Django signals class - for usage in for example FastAPI."
+category = "main"
+optional = false
+python-versions = ">=3.8,<4.0"
+
+[[package]]
 name = "black"
 version = "23.3.0"
 description = "The uncompromising code formatter."
@@ -328,12 +336,16 @@ h11 = ">=0.9.0,<1"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "81ebea0f94081713e332b1110ad389112429a25fa50bc2c5c1114cfa4f8febd3"
+content-hash = "60e9cebc3652082435144684001379ce464fa4c20bdbe80e5ff44ea3f48d0003"
 
 [metadata.files]
 aiofiles = [
     {file = "aiofiles-23.1.0-py3-none-any.whl", hash = "sha256:9312414ae06472eb6f1d163f555e466a23aed1c8f60c30cccf7121dba2e53eb2"},
     {file = "aiofiles-23.1.0.tar.gz", hash = "sha256:edd247df9a19e0db16534d4baaf536d6609a43e1de5401d7a4c1c148753a1635"},
+]
+async-signals = [
+    {file = "async_signals-0.1.5-py3-none-any.whl", hash = "sha256:3ec9061b6e944fe37967bf79ca314abc1c920d69806db2ee9ac863c618641ca1"},
+    {file = "async_signals-0.1.5.tar.gz", hash = "sha256:28e267ef9115c76e49de977fded1504fc8de198c94879677f728a6d0409b73cf"},
 ]
 black = [
     {file = "black-23.3.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:32daa9783106c28815d05b724238e30718f34155653d4d6e125dc7daec8e260c"},
