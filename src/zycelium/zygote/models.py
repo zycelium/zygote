@@ -3,10 +3,6 @@ Database models.
 """
 from tortoise import Tortoise, fields
 from tortoise.models import Model
-from tortoise.contrib.pydantic.creator import (
-    pydantic_model_creator,
-    pydantic_queryset_creator,
-)
 
 from zycelium.zygote.signals import database_init
 
@@ -32,9 +28,7 @@ class Frame(Model):
     data = fields.JSONField(default={})
     meta = fields.JSONField(default={})
     time = fields.DatetimeField(auto_now_add=True, index=True)
-    agent = fields.ForeignKeyField(
-        "models.Agent", related_name="frames", null=True
-    )
+    agent = fields.ForeignKeyField("models.Agent", related_name="frames", null=True)
 
     def __str__(self) -> str:
         return f"{self.kind}({self.name})"
@@ -44,13 +38,6 @@ class Frame(Model):
 
         table = "frame"
         ordering = ["-time"]
-
-
-PydanticFrame = pydantic_model_creator(Frame, name="Frame")
-PydanticFrameIn = pydantic_model_creator(
-    Frame, name="FrameIn", exclude_readonly=True, exclude=("uuid", "time")
-)
-PydanticFrameList = pydantic_queryset_creator(Frame, name="FrameList")
 
 
 class Space(Model):
@@ -76,16 +63,6 @@ class Space(Model):
         ordering = ["name"]
 
 
-PydanticSpace = pydantic_model_creator(Space, name="Space")
-PydanticSpaceIn = pydantic_model_creator(
-    Space,
-    name="SpaceIn",
-    exclude_readonly=True,
-    exclude=("uuid", "created_at", "updated_at"),
-)
-PydanticSpaceList = pydantic_queryset_creator(Space, name="SpaceList")
-
-
 class Agent(Model):
     """Agent model"""
 
@@ -107,13 +84,3 @@ class Agent(Model):
 
         table = "agent"
         ordering = ["name"]
-
-
-PydanticAgent = pydantic_model_creator(Agent, name="Agent")
-PydanticAgentIn = pydantic_model_creator(
-    Agent,
-    name="AgentIn",
-    exclude_readonly=True,
-    exclude=("uuid", "created_at", "updated_at"),
-)
-PydanticAgentList = pydantic_queryset_creator(Agent, name="AgentList")
