@@ -1,7 +1,6 @@
 """
 Agent.
 """
-from typing import final
 import socketio
 
 
