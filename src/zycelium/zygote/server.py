@@ -31,7 +31,7 @@ from zycelium.zygote.utils import secret_key
 app_dir = Path(get_app_dir("zygote"))
 app_tls_cert_path = app_dir / "cert.pem"
 app_tls_key_path = app_dir / "key.pem"
-app_db_path = Path("zygote.db").absolute()  # pylint: disable=invalid-name
+app_db_path = app_dir / "zygote.db"
 
 app = Quart(__name__)
 app.secret_key = secret_key(app_dir / "secret_key")
