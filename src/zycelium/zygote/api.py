@@ -361,6 +361,8 @@ class ZygoteAPI:
     ):
         """Create frame."""
         self.logger.info("Creating frame")
+        if not name:
+            raise ValueError("name is required")
         if not agent_uuid or not space_uuids:
             raise ValueError("agent_uuid and space_uuids are required")
         data = data or {}
