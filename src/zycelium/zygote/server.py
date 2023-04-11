@@ -69,8 +69,6 @@ async def redirect_to_login(*_: Exception) -> ResponseReturnValue:
     return redirect(url_for("http_login"))
 
 
-# Helpers
-
 # WebUI
 
 
