@@ -1,6 +1,7 @@
 """
 Agent.
 """
+from typing import final
 import socketio
 
 
@@ -11,6 +12,8 @@ class Agent:
         self.name = name
         self.sio = socketio.AsyncClient(ssl_verify=False)
         self.on = self.sio.on  # pylint: disable=invalid-name
+        self.sio.on("connect", self.on_connect)
+        self.sio.on("disconnect", self.on_disconnect)
 
     async def connect(self, url: str, auth: dict) -> None:
         """Connect to server."""
@@ -26,5 +29,17 @@ class Agent:
 
     async def run(self, url: str, auth: dict) -> None:
         """Run agent."""
-        await self.connect(url, auth=auth)
-        await self.sio.wait()
+        try:
+            await self.connect(url, auth=auth)
+        except socketio.exceptions.ConnectionError:
+            print("Connection error: check network connection, url or auth.")
+        finally:
+            await self.sio.wait()
+
+    async def on_connect(self) -> None:
+        """On connect."""
+        print("Connected to server")
+
+    async def on_disconnect(self) -> None:
+        """On disconnect."""
+        print("Disconnected from server")
