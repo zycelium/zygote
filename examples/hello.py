@@ -21,4 +21,4 @@ async def on_hello(data: dict) -> None:
 if __name__ == '__main__':
     import asyncio
 
-    asyncio.run(agent.run("https://localhost:3965/"))
+    asyncio.run(agent.run("https://localhost:3965/", auth={'token': '1234'}))

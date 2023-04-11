@@ -11,9 +11,9 @@ class Agent:
         self.sio = socketio.AsyncClient(ssl_verify=False)
         self.on = self.sio.on  # pylint: disable=invalid-name
     
-    async def connect(self, url: str) -> None:
+    async def connect(self, url: str, auth: dict) -> None:
         """Connect to server."""
-        await self.sio.connect(url)
+        await self.sio.connect(url, auth=auth)
     
     async def disconnect(self) -> None:
         """Disconnect from server."""
@@ -23,7 +23,7 @@ class Agent:
         """Emit event."""
         await self.sio.emit(event, data)
     
-    async def run(self, url: str) -> None:
+    async def run(self, url: str, auth: dict) -> None:
         """Run agent."""
-        await self.connect(url)
+        await self.connect(url, auth=auth)
         await self.sio.wait()
