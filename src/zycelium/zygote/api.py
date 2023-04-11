@@ -1,6 +1,7 @@
 """
 Zygote API.
 """
+import secrets
 from typing import Optional
 
 from tortoise import Tortoise
@@ -12,6 +13,7 @@ from zycelium.zygote.models import (
     Frame,
     Space,
     Agent,
+    AuthToken,
 )
 
 
@@ -522,4 +524,98 @@ class ZygoteAPI:
             return {"success": True}
         except Exception:  # pylint: disable=broad-except
             self.logger.error("Failed to delete frame")
+            return {"success": False}
+
+    async def create_auth_token(self, agent_uuid: int) -> dict:
+        """Create auth token."""
+        self.logger.info("Creating auth token")
+        try:
+            agent_obj = await Agent.get(uuid=agent_uuid)
+            token = secrets.token_urlsafe(32)
+            token_obj = await AuthToken.create(agent=agent_obj, token=token)
+            token_dict = {
+                "uuid": str(token_obj.uuid),
+                "agent": {
+                    "uuid": str(token_obj.agent.uuid),
+                    "name": token_obj.agent.name,
+                    "data": token_obj.agent.data,
+                    "meta": token_obj.agent.meta,
+                },
+                "token": token_obj.token,
+            }
+            return token_dict
+        except Exception:  # pylint: disable=broad-except
+            self.logger.error("Failed to create auth token")
+            return {"success": False}
+    
+    async def get_auth_token(self, token_uuid: int) -> dict:
+        """Get auth token."""
+        self.logger.info("Getting auth token")
+        try:
+            token_obj = await AuthToken.get(uuid=token_uuid).prefetch_related(
+                "agent",
+                Prefetch("agent", queryset=Agent.all()),
+            )
+            token_dict = {
+                "uuid": str(token_obj.uuid),
+                "agent": {
+                    "uuid": str(token_obj.agent.uuid),
+                    "name": token_obj.agent.name,
+                    "data": token_obj.agent.data,
+                    "meta": token_obj.agent.meta,
+                },
+                "token": token_obj.token,
+            }
+            return token_dict
+        except Exception:  # pylint: disable=broad-except
+            self.logger.error("Failed to get auth token")
+            return {"success": False}
+    
+    async def delete_auth_token(self, token_uuid: int) -> dict:
+        """Delete auth token."""
+        self.logger.info("Deleting auth token")
+        try:
+            token_obj = await AuthToken.get(uuid=token_uuid)
+            await token_obj.delete()
+            return {"success": True}
+        except Exception:  # pylint: disable=broad-except
+            self.logger.error("Failed to delete auth token")
+            return {"success": False}
+    
+    async def get_agent_by_token(self, token: str) -> dict:
+        """Get agent by token."""
+        self.logger.info("Getting agent by token")
+        try:
+            token_obj = await AuthToken.get(token=token).prefetch_related(
+                "agent",
+                Prefetch("agent", queryset=Agent.all()),
+            )
+            agent_dict = {
+                "uuid": str(token_obj.agent.uuid),
+                "name": token_obj.agent.name,
+                "data": token_obj.agent.data,
+                "meta": token_obj.agent.meta,
+            }
+            return agent_dict
+        except Exception:  # pylint: disable=broad-except
+            self.logger.error("Failed to get agent by token")
+            return {"success": False}
+    
+    async def get_auth_tokens_for_agent(self, agent_uuid: int) -> dict:
+        """Get auth tokens for agent."""
+        self.logger.info("Getting auth tokens for agent")
+        try:
+            agent_obj = await Agent.get(uuid=agent_uuid).prefetch_related(
+                "tokens", Prefetch("tokens", queryset=AuthToken.all())
+            )
+            tokens_list = []
+            for token in await agent_obj.tokens:  # type: ignore
+                token_dict = {
+                    "uuid": str(token.uuid),
+                    "token": token.token,
+                }
+                tokens_list.append(token_dict)
+            return {"tokens": tokens_list}
+        except Exception:  # pylint: disable=broad-except
+            self.logger.error("Failed to get auth tokens for agent")
             return {"success": False}
