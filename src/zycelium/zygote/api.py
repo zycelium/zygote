@@ -5,10 +5,6 @@ from typing import Optional
 
 from tortoise import Tortoise
 from tortoise.query_utils import Prefetch
-from tortoise.contrib.pydantic.creator import (
-    pydantic_model_creator,
-    pydantic_queryset_creator,
-)
 
 from zycelium.zygote.logging import get_logger
 from zycelium.zygote.models import (
@@ -250,4 +246,220 @@ class ZygoteAPI:
             return {"success": True}
         except Exception:  # pylint: disable=broad-except
             self.logger.error("Failed to leave space: %s", space_uuid)
+            return {"success": False}
+
+    async def get_joined_spaces(self, agent_uuid: int) -> dict:
+        """Get joined spaces."""
+        self.logger.info("Getting joined spaces")
+        try:
+            agent_obj = await Agent.get(uuid=agent_uuid).prefetch_related(
+                "spaces", Prefetch("spaces", queryset=Space.all())
+            )
+            spaces_list = []
+            for space in await agent_obj.spaces:
+                space_dict = {
+                    "uuid": space.uuid,
+                    "name": space.name,
+                    "data": space.data,
+                    "meta": space.meta,
+                }
+                spaces_list.append(space_dict)
+            return {"spaces": spaces_list}
+        except Exception:  # pylint: disable=broad-except
+            self.logger.error("Failed to get joined spaces")
+            return {"success": False}
+
+    async def get_unjoined_spaces(self, agent_uuid: int) -> dict:
+        """Get unjoined spaces."""
+        self.logger.info("Getting unjoined spaces")
+        try:
+            agent_obj = await Agent.get(uuid=agent_uuid)
+            spaces = await Space.all()
+            spaces_list = []
+            joined_spaces = await agent_obj.spaces
+            for space in spaces:
+                if space not in joined_spaces:
+                    space_dict = {
+                        "uuid": space.uuid,
+                        "name": space.name,
+                        "data": space.data,
+                        "meta": space.meta,
+                    }
+                    spaces_list.append(space_dict)
+            return {"spaces": spaces_list}
+        except Exception:  # pylint: disable=broad-except
+            self.logger.error("Failed to get unjoined spaces")
+            return {"success": False}
+
+    async def get_joined_agents(self, space_uuid: int) -> dict:
+        """Get joined agents."""
+        self.logger.info("Getting joined agents")
+        try:
+            space_obj = await Space.get(uuid=space_uuid).prefetch_related(
+                "agents", Prefetch("agents", queryset=Agent.all())
+            )
+            agents_list = []
+            for agent in await space_obj.agents:  # type: ignore
+                agent_dict = {
+                    "uuid": agent.uuid,
+                    "name": agent.name,
+                    "data": agent.data,
+                    "meta": agent.meta,
+                }
+                agents_list.append(agent_dict)
+            return {"agents": agents_list}
+        except Exception:  # pylint: disable=broad-except
+            self.logger.error("Failed to get joined agents")
+            return {"success": False}
+
+    async def get_unjoined_agents(self, space_uuid: int) -> dict:
+        """Get unjoined agents."""
+        self.logger.info("Getting unjoined agents")
+        try:
+            space_obj = await Space.get(uuid=space_uuid)
+            agents = await Agent.all()
+            agents_list = []
+            joined_agents = await space_obj.agents  # type: ignore
+            for agent in agents:
+                if agent not in joined_agents:
+                    agent_dict = {
+                        "uuid": agent.uuid,
+                        "name": agent.name,
+                        "data": agent.data,
+                        "meta": agent.meta,
+                    }
+                    agents_list.append(agent_dict)
+            return {"agents": agents_list}
+        except Exception:  # pylint: disable=broad-except
+            self.logger.error("Failed to get unjoined agents")
+            return {"success": False}
+
+    async def create_frame(
+        self,
+        kind: str,
+        name: str,
+        data: Optional[dict] = None,
+        meta: Optional[dict] = None,
+        agent_uuid: Optional[str] = None,
+        space_uuids: Optional[list] = None,
+    ):
+        """Create frame."""
+        self.logger.info("Creating frame")
+        if not agent_uuid or not space_uuids:
+            raise ValueError("agent_uuid and space_uuids are required")
+        data = data or {}
+        meta = meta or {}
+        space_uuids = space_uuids or []
+        try:
+            frame_obj = await Frame.create(kind=kind, name=name, data=data, meta=meta)
+            if agent_uuid:
+                agent_obj = await Agent.get(uuid=agent_uuid)
+                frame_obj.agent = agent_obj  # type: ignore
+                await frame_obj.save()
+            for space_uuid in space_uuids:
+                space_obj = await Space.get(uuid=space_uuid)
+                await frame_obj.spaces.add(space_obj)  # type: ignore
+            frame_dict = {
+                "uuid": frame_obj.uuid,
+                "kind": frame_obj.kind,
+                "name": frame_obj.name,
+                "data": frame_obj.data,
+                "meta": frame_obj.meta,
+            }
+            return frame_dict
+        except Exception:  # pylint: disable=broad-except
+            self.logger.error("Failed to create frame")
+            return {"success": False}
+
+    async def get_frame(self, frame_uuid: int) -> dict:
+        """Get frame."""
+        self.logger.info("Getting frame")
+        try:
+            frame_obj = await Frame.get(uuid=frame_uuid).prefetch_related(
+                "agent",
+                Prefetch("agent", queryset=Agent.all()),
+                "spaces",
+                Prefetch("spaces", queryset=Space.all()),
+            )
+            spaces_list = [
+                {
+                    "uuid": space.uuid,
+                    "name": space.name,
+                    "data": space.data,
+                    "meta": space.meta,
+                }
+                for space in await frame_obj.spaces
+            ]  # type: ignore
+            frame_dict = {
+                "uuid": frame_obj.uuid,
+                "kind": frame_obj.kind,
+                "name": frame_obj.name,
+                "data": frame_obj.data,
+                "meta": frame_obj.meta,
+                "agent": {
+                    "uuid": frame_obj.agent.uuid,
+                    "name": frame_obj.agent.name,
+                    "data": frame_obj.agent.data,
+                    "meta": frame_obj.agent.meta,
+                },
+                "spaces": spaces_list,
+            }
+            return frame_dict
+        except Exception:  # pylint: disable=broad-except
+            self.logger.error("Failed to get frame")
+            return {"success": False}
+
+    async def get_frames_for_agent(self, agent_uuid: int) -> dict:
+        """Get frames."""
+        self.logger.info("Getting frames")
+        try:
+            agent_obj = await Agent.get(uuid=agent_uuid).prefetch_related(
+                "frames", Prefetch("frames", queryset=Frame.all())
+            )
+            frames_list = []
+            for frame in await agent_obj.frames:  # type: ignore
+                frame_dict = {
+                    "uuid": frame.uuid,
+                    "kind": frame.kind,
+                    "name": frame.name,
+                    "data": frame.data,
+                    "meta": frame.meta,
+                }
+                frames_list.append(frame_dict)
+            return {"frames": frames_list}
+        except Exception:  # pylint: disable=broad-except
+            self.logger.error("Failed to get frames")
+            return {"success": False}
+
+    async def get_frames_for_space(self, space_uuid: int) -> dict:
+        """Get frames."""
+        self.logger.info("Getting frames")
+        try:
+            space_obj = await Space.get(uuid=space_uuid).prefetch_related(
+                "frames", Prefetch("frames", queryset=Frame.all())
+            )
+            frames_list = []
+            for frame in await space_obj.frames:  # type: ignore
+                frame_dict = {
+                    "uuid": frame.uuid,
+                    "kind": frame.kind,
+                    "name": frame.name,
+                    "data": frame.data,
+                    "meta": frame.meta,
+                }
+                frames_list.append(frame_dict)
+            return {"frames": frames_list}
+        except Exception:  # pylint: disable=broad-except
+            self.logger.error("Failed to get frames")
+            return {"success": False}
+
+    async def delete_frame(self, frame_uuid: int) -> dict:
+        """Delete frame."""
+        self.logger.info("Deleting frame")
+        try:
+            frame_obj = await Frame.get(uuid=frame_uuid)
+            await frame_obj.delete()
+            return {"success": True}
+        except Exception:  # pylint: disable=broad-except
+            self.logger.error("Failed to delete frame")
             return {"success": False}
