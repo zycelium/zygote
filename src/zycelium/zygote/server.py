@@ -190,7 +190,8 @@ async def http_agent(uuid):
     """Agent route."""
     agent = await api.get_agent(uuid)
     spaces = (await api.get_spaces())["spaces"]
-    return await render_template("agent.html", agent=agent, spaces=spaces)
+    tokens = (await api.get_auth_tokens_for_agent(uuid))["tokens"]
+    return await render_template("agent.html", agent=agent, spaces=spaces, tokens=tokens)
 
 
 @app.route("/agents/<uuid>/join", methods=["POST"])
@@ -210,4 +211,20 @@ async def http_agent_leave_space(uuid):
     form = await request.form
     space_uuid = form["space_uuid"]
     await api.leave_space(space_uuid, uuid)
+    return redirect(f"/agents/{uuid}")
+
+
+@app.route("/agents/<uuid>/token", methods=["POST"])
+@login_required
+async def http_agent_create_auth_token(uuid):
+    """Agent create auth token route."""
+    await api.create_auth_token(uuid)
+    return redirect(f"/agents/{uuid}")
+
+
+@app.route("/agents/<uuid>/token/<token_uuid>/delete", methods=["POST"])
+@login_required
+async def http_agent_delete_auth_token(uuid, token_uuid):
+    """Agent delete auth token route."""
+    await api.delete_auth_token(token_uuid)
     return redirect(f"/agents/{uuid}")

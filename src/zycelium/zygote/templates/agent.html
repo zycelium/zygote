@@ -37,6 +37,26 @@
 </form>
 {% endif %}
 
+<h2>Auth Tokens</h2>
+<form action="{{ url_for('http_agent_create_auth_token', uuid=agent.uuid) }}" method="post">
+    <input type="submit" value="Create">
+</form>
+{% if tokens|length == 0 %}
+<p>No auth tokens</p>
+{% else %}
+<ul>
+    {% for token in tokens %}
+    <li>
+        <form class="inline" action="{{ url_for('http_agent_delete_auth_token', uuid=agent.uuid, token_uuid=token.uuid) }}" method="post">
+            <input type="hidden" name="token" value="{{ token }}">
+            <input class="inline" type="submit" value="Delete">
+        </form>
+        {{ token }}
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
 <h2>Caution</h2>
 <form action="/agent/{{ agent.id }}" method="post">
     <input type="hidden" name="_method" value="delete">
