@@ -1,6 +1,4 @@
 """Test API."""
-import pytest
-
 from zycelium.zygote.api import ZygoteAPI
 
 
