@@ -11,9 +11,8 @@ nav ul li {
     margin: 0 1em 0 0;
 }
 
-/* last element of nav ul li aligned to right */
-
 nav ul li:last-child {
+    /* last element aligned to right */
     margin-left: auto;
     margin-right: 0;
 }
