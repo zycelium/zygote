@@ -108,19 +108,17 @@ async def http_logout():
 async def http_frames():
     """Frames route."""
     if request.method == "POST":
-        try:
-            form = await request.form
-            kind = form["kind"]
-            name = form["name"]
-            data = form["data"]
-            agent = form["agent"]
-            spaces = form.getlist("spaces")
-            frame = await api.create_frame(
-                kind=kind, name=name, data=data, agent_uuid=agent, space_uuids=spaces
-            )
-            return redirect(f"/frames/{frame['uuid']}")
-        except Exception as err:
-            raise err
+        form = await request.form
+        kind = form["kind"]
+        name = form["name"]
+        data = form["data"]
+        agent = form["agent"]
+        spaces = form.getlist("spaces")
+        frame = await api.create_frame(
+            kind=kind, name=name, data=data, agent_uuid=agent, space_uuids=spaces
+        )
+        return redirect(f"/frames/{frame['uuid']}")
+        
     frames = (await api.get_frames())["frames"]
     agents = (await api.get_agents())["agents"]
     spaces = (await api.get_spaces())["spaces"]
@@ -172,6 +170,7 @@ async def http_agents():
         meta = form["meta"]
         agent = await api.create_agent(name=name, data=data, meta=meta)
         return redirect(f"/agents/{agent['uuid']}")
+
     agents = (await api.get_agents())["agents"]
     return await render_template("agents.html", agents=agents)
 
