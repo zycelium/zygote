@@ -32,3 +32,12 @@ def serve(host, port, tls, debug):
         uvicorn.run(
             "zycelium.zygote.server:app", host=host, port=port, log_level=log_level
         )
+
+
+@cli.command()
+def destroy():
+    """Destroy the database."""
+    from zycelium.zygote.server import app_db_path
+
+    app_db_path.unlink()
+    click.echo("Database destroyed")
