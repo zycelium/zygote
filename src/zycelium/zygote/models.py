@@ -57,7 +57,7 @@ class Space(Model):
     """Space model"""
 
     uuid = fields.UUIDField(pk=True, index=True)
-    name = fields.CharField(max_length=64, index=True, null=False)
+    name = fields.CharField(max_length=64, index=True, null=False, unique=True)
     data = fields.JSONField(default={})
     meta = fields.JSONField(default={})
     created_at = fields.DatetimeField(auto_now_add=True, index=True)
