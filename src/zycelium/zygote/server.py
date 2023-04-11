@@ -1,7 +1,6 @@
 """
 Zygote server.
 """
-from os import environ
 from pathlib import Path
 
 from click import get_app_dir
