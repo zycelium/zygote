@@ -59,7 +59,7 @@ app_db_path = "zygote.db"  # pylint: disable=invalid-name
 
 sup = Supervisor()
 log = get_logger("zygote.server")
-api = ZygoteAPI(app)
+api = ZygoteAPI()
 
 # Hooks
 
