@@ -38,7 +38,7 @@ app.secret_key = ZYGOTE_SECRET_KEY
 quart_auth = AuthManager(app)
 app = cors(app, allow_origin="*")
 app_dir = Path(get_app_dir("zygote"))
-app_db_path = "zygote.db"  # pylint: disable=invalid-name
+app_db_path = Path("zygote.db").absolute()  # pylint: disable=invalid-name
 
 sup = Supervisor()
 log = get_logger("zygote.server")
