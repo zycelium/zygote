@@ -388,7 +388,7 @@ class ZygoteAPI:
                     "data": space.data,
                     "meta": space.meta,
                 }
-                for space in await frame_obj.spaces
+                for space in await frame_obj.spaces  # type: ignore
             ]  # type: ignore
             frame_dict = {
                 "uuid": frame_obj.uuid,
