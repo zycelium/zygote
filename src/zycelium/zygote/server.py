@@ -106,6 +106,7 @@ async def http_logout():
 
 
 @app.route("/frames", methods=["GET", "POST"])
+@login_required
 async def http_frames():
     """Frames route."""
     if request.method == "POST":
@@ -129,6 +130,7 @@ async def http_frames():
 
 
 @app.route("/frames/<uuid>")
+@login_required
 async def http_frame(uuid):
     """Frame route."""
     frame = await api.get_frame(uuid)
@@ -136,6 +138,7 @@ async def http_frame(uuid):
 
 
 @app.route("/spaces", methods=["GET", "POST"])
+@login_required
 async def http_spaces():
     """Spaces route."""
     if request.method == "POST":
@@ -151,6 +154,7 @@ async def http_spaces():
 
 
 @app.route("/spaces/<uuid>")
+@login_required
 async def http_space(uuid):
     """Space route."""
     space = await api.get_space(uuid)
@@ -158,6 +162,7 @@ async def http_space(uuid):
 
 
 @app.route("/agents", methods=["GET", "POST"])
+@login_required
 async def http_agents():
     """Agents route."""
     if request.method == "POST":
@@ -172,6 +177,7 @@ async def http_agents():
 
 
 @app.route("/agents/<uuid>")
+@login_required
 async def http_agent(uuid):
     """Agent route."""
     agent = await api.get_agent(uuid)
@@ -180,6 +186,7 @@ async def http_agent(uuid):
 
 
 @app.route("/agents/<uuid>/join", methods=["POST"])
+@login_required
 async def http_agent_join_space(uuid):
     """Agent join space route."""
     form = await request.form
@@ -189,6 +196,7 @@ async def http_agent_join_space(uuid):
 
 
 @app.route("/agents/<uuid>/leave", methods=["POST"])
+@login_required
 async def http_agent_leave_space(uuid):
     """Agent leave space route."""
     form = await request.form
