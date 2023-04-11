@@ -24,25 +24,10 @@ from quart_auth import (
     current_user,
 )
 from quart_cors import cors
-from tortoise import Tortoise
-from tortoise.query_utils import Prefetch
+from tortoise.fields import data
 
 from zycelium.zygote.api import ZygoteAPI
 from zycelium.zygote.logging import get_logger
-from zycelium.zygote.models import (
-    Frame,
-    PydanticFrame,
-    PydanticFrameIn,
-    PydanticFrameList,
-    Space,
-    PydanticSpace,
-    PydanticSpaceIn,
-    PydanticSpaceList,
-    Agent,
-    PydanticAgent,
-    PydanticAgentIn,
-    PydanticAgentList,
-)
 from zycelium.zygote.supervisor import Supervisor
 
 ZYGOTE_SECRET_KEY = environ.get("ZYGOTE_SECRET_KEY", None)
@@ -88,156 +73,6 @@ async def redirect_to_login(*_: Exception) -> ResponseReturnValue:
 
 # Helpers
 
-
-async def get_data_and_redirect_url():
-    """Get data and redirect url."""
-    data = await request.get_json()
-    if not data:
-        data = await request.form
-    if not data:
-        raise ValueError("No data")
-    redirect_url = data.get("redirect_url", None)
-    if redirect_url:
-        # Remove redirect url parameter from immutable data.
-        data = data.copy()
-        del data["redirect_url"]
-    return data, redirect_url
-
-
-# API
-
-
-@app.route("/api/v1/frames", methods=["POST"])
-async def post_frame():
-    """Post frame."""
-    spaces = []
-    data = await request.get_json()
-    if data:
-        spaces = data.pop("spaces", [])
-    if not data:
-        form = await request.form
-        spaces = form.getlist("spaces")
-        data = form.to_dict()
-    if not data:
-        return jsonify({"error": "No data."}), 400
-    redirect_url = data.get("redirect_url", None)
-    if redirect_url:
-        # Remove redirect url parameter from immutable data.
-        data = data.copy()
-        del data["redirect_url"]
-    agent = data.pop("agent", None)
-    data.pop("spaces", None)
-    data = PydanticFrameIn(**data).dict()
-    frame = await Frame.create(**data)
-    frame.agent = await Agent.get(uuid=agent)  # type: ignore
-    for space in spaces:
-        # check if agent has joined space
-        if not await frame.agent.spaces.filter(uuid=space).exists():
-            continue
-        await frame.spaces.add(await Space.get(uuid=space))  # type: ignore
-    await frame.save()
-    pyframe = await PydanticFrame.from_tortoise_orm(frame)
-    if redirect_url:
-        return redirect(redirect_url)
-    return jsonify(pyframe.dict())
-
-
-@app.route("/api/v1/frames", methods=["GET"])
-async def get_frames():
-    """Get frames."""
-    frames = await PydanticFrameList.from_queryset(Frame.all().limit(100))
-    return jsonify(frames.dict()["__root__"])
-
-
-@app.route("/api/v1/frames/<uuid>", methods=["GET"])
-async def get_frame(uuid):
-    """Get frame."""
-    frame = await Frame.get(uuid=uuid)
-    pyframe = await PydanticFrame.from_tortoise_orm(frame)
-    return jsonify(pyframe.dict())
-
-
-@app.route("/api/v1/frames/<uuid>", methods=["DELETE"])
-async def delete_frame(uuid):
-    """Delete frame."""
-    await Frame.filter(uuid=uuid).delete()
-    return jsonify({"success": True})
-
-
-@app.route("/api/v1/spaces", methods=["POST"])
-async def post_space():
-    """Post space."""
-    try:
-        data, redirect_url = await get_data_and_redirect_url()
-    except ValueError:
-        return jsonify({"error": "No data."}), 400
-    data = PydanticSpaceIn(**data).dict()
-    space = await Space.create(**data)
-    pyspace = await PydanticSpace.from_tortoise_orm(space)
-    if redirect_url:
-        return redirect(redirect_url)
-    return jsonify(pyspace.dict())
-
-
-@app.route("/api/v1/spaces", methods=["GET"])
-async def get_spaces():
-    """Get spaces."""
-    spaces = await PydanticSpaceList.from_queryset(Space.all().limit(100))
-    return jsonify(spaces.dict()["__root__"])
-
-
-@app.route("/api/v1/spaces/<uuid>", methods=["GET"])
-async def get_space(uuid):
-    """Get space."""
-    space = await Space.get(uuid=uuid)
-    pyspace = await PydanticSpace.from_tortoise_orm(space)
-    return jsonify(pyspace.dict())
-
-
-@app.route("/api/v1/spaces/<uuid>", methods=["DELETE"])
-async def delete_space(uuid):
-    """Delete space."""
-    await Space.filter(uuid=uuid).delete()
-    return jsonify({"success": True})
-
-
-@app.route("/api/v1/agents", methods=["POST"])
-async def post_agent():
-    """Post agent."""
-    try:
-        data, redirect_url = await get_data_and_redirect_url()
-    except ValueError:
-        return jsonify({"error": "No data."}), 400
-    data = PydanticAgentIn(**data).dict()
-    agent = await Agent.create(**data)
-    pyagent = await PydanticAgent.from_tortoise_orm(agent)
-    if redirect_url:
-        return redirect(redirect_url)
-    return jsonify(pyagent.dict())
-
-
-@app.route("/api/v1/agents", methods=["GET"])
-async def get_agents():
-    """Get agents."""
-    agents = await PydanticAgentList.from_queryset(Agent.all().limit(100))
-    return jsonify(agents.dict()["__root__"])
-
-
-@app.route("/api/v1/agents/<uuid>", methods=["GET"])
-async def get_agent(uuid):
-    """Get agent."""
-    agent = await Agent.get(uuid=uuid)
-    pyagent = await PydanticAgent.from_tortoise_orm(agent)
-    return jsonify(pyagent.dict())
-
-
-@app.route("/api/v1/agents/<uuid>", methods=["DELETE"])
-async def delete_agent(uuid):
-    """Delete agent."""
-    await Agent.filter(uuid=uuid).delete()
-    return jsonify({"success": True})
-
-
 # WebUI
 
 
@@ -270,12 +105,24 @@ async def http_logout():
     return redirect("/")
 
 
-@app.route("/frames")
+@app.route("/frames", methods=["GET", "POST"])
 async def http_frames():
     """Frames route."""
-    frames = await Frame.all().limit(100)
-    agents = await Agent.all()
-    spaces = await Space.all()
+    if request.method == "POST":
+        try:
+            form = await request.form
+            kind = form["kind"]
+            name = form["name"]
+            data = form["data"]
+            agent = form["agent"]
+            spaces = form.getlist("spaces")
+            frame = await api.create_frame(kind=kind, name=name, data=data, agent_uuid=agent, space_uuids=spaces)
+            return redirect(f"/frames/{frame['uuid']}")
+        except Exception as err:
+            raise err
+    frames = (await api.get_frames())["frames"]
+    agents = (await api.get_agents())["agents"]
+    spaces = (await api.get_spaces())["spaces"]
     return await render_template(
         "frames.html", frames=frames, agents=agents, spaces=spaces
     )
@@ -284,46 +131,51 @@ async def http_frames():
 @app.route("/frames/<uuid>")
 async def http_frame(uuid):
     """Frame route."""
-    frame = await Frame.get(uuid=uuid).prefetch_related(
-        Prefetch("agent", queryset=Agent.all()),
-        Prefetch("spaces", queryset=Space.all()),
-    )
+    frame = await api.get_frame(uuid)
     return await render_template("frame.html", frame=frame)
 
 
-@app.route("/spaces")
+@app.route("/spaces", methods=["GET", "POST"])
 async def http_spaces():
     """Spaces route."""
-    spaces = await Space.all().limit(100)
+    if request.method == "POST":
+        form = await request.form
+        name = form["name"]
+        data = form["data"]
+        meta = form["meta"]
+        space = await api.create_space(name=name, data=data, meta=meta)
+        return redirect(f"/spaces/{space['uuid']}")
+
+    spaces = (await api.get_spaces())["spaces"]
     return await render_template("spaces.html", spaces=spaces)
 
 
 @app.route("/spaces/<uuid>")
 async def http_space(uuid):
     """Space route."""
-    space = await Space.get(uuid=uuid).prefetch_related(
-        Prefetch("agents", queryset=Agent.all())
-    )
+    space = await api.get_space(uuid)
     return await render_template("space.html", space=space)
 
 
-@app.route("/agents")
+@app.route("/agents", methods=["GET", "POST"])
 async def http_agents():
     """Agents route."""
-    agents = await PydanticAgentList.from_queryset(Agent.all().limit(100))
-    return await render_template("agents.html", agents=agents.dict()["__root__"])
+    if request.method == "POST":
+        form = await request.form
+        name = form["name"]
+        data = form["data"]
+        meta = form["meta"]
+        agent = await api.create_agent(name=name, data=data, meta=meta)
+        return redirect(f"/agents/{agent['uuid']}")
+    agents = (await api.get_agents())["agents"]
+    return await render_template("agents.html", agents=agents)
 
 
 @app.route("/agents/<uuid>")
 async def http_agent(uuid):
     """Agent route."""
-    agent = await Agent.get(uuid=uuid).prefetch_related(
-        Prefetch("spaces", queryset=Space.all())
-    )
-    spaces = await Space.all()
-    # spaces = await Space.exclude(
-    #     agents__uuid=uuid
-    # ).all()
+    agent = await api.get_agent(uuid)
+    spaces = (await api.get_spaces())["spaces"]
     return await render_template("agent.html", agent=agent, spaces=spaces)
 
 
@@ -331,10 +183,8 @@ async def http_agent(uuid):
 async def http_agent_join_space(uuid):
     """Agent join space route."""
     form = await request.form
-    space_uuid = form.get("space_uuid")
-    space = await Space.get(uuid=space_uuid)
-    agent = await Agent.get(uuid=uuid)
-    await agent.spaces.add(space)
+    space_uuid = form["space_uuid"]
+    await api.join_space(space_uuid, uuid)
     return redirect(f"/agents/{uuid}")
 
 
@@ -342,8 +192,6 @@ async def http_agent_join_space(uuid):
 async def http_agent_leave_space(uuid):
     """Agent leave space route."""
     form = await request.form
-    space_uuid = form.get("space_uuid")
-    space = await Space.get(uuid=space_uuid)
-    agent = await Agent.get(uuid=uuid)
-    await agent.spaces.remove(space)
+    space_uuid = form["space_uuid"]
+    await api.leave_space(space_uuid, uuid)
     return redirect(f"/agents/{uuid}")

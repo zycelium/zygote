@@ -7,7 +7,7 @@
     <summary>
         Create Agent
     </summary>
-    <form action="{{ url_for('post_agent') }}"" method="post">
+    <form action="{{ url_for('http_agents') }}"" method="post">
         <input type="hidden" name="redirect_url" value="{{ url_for('http_agents') }}">
         <span class="form-field">
             <label for="name">Name</label>
