@@ -118,7 +118,7 @@ async def http_frames():
             kind=kind, name=name, data=data, agent_uuid=agent, space_uuids=spaces
         )
         return redirect(f"/frames/{frame['uuid']}")
-        
+
     frames = (await api.get_frames())["frames"]
     agents = (await api.get_agents())["agents"]
     spaces = (await api.get_spaces())["spaces"]
