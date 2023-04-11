@@ -27,9 +27,9 @@ from quart_cors import cors
 from tortoise import Tortoise
 from tortoise.query_utils import Prefetch
 
+from zycelium.zygote.api import ZygoteAPI
 from zycelium.zygote.logging import get_logger
 from zycelium.zygote.models import (
-    init_db,
     Frame,
     PydanticFrame,
     PydanticFrameIn,
@@ -59,6 +59,7 @@ app_db_path = "zygote.db"  # pylint: disable=invalid-name
 
 sup = Supervisor()
 log = get_logger("zygote.server")
+api = ZygoteAPI(app)
 
 # Hooks
 
@@ -67,7 +68,7 @@ log = get_logger("zygote.server")
 async def before_serving():
     """Startup hook."""
     log.info("Starting server")
-    await init_db(f"sqlite://{app_db_path}")
+    await api.start(f"sqlite://{app_db_path}")
     await sup.start()
 
 
@@ -75,7 +76,7 @@ async def before_serving():
 async def after_serving():
     """Shutdown hook."""
     log.info("Stopping server")
-    await Tortoise.close_connections()
+    await api.stop()
     await sup.stop()
 
 
