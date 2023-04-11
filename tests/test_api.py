@@ -114,3 +114,28 @@ async def test_delete_agent():
     agent = await api.delete_agent(agent["uuid"])
     assert agent["success"] is True
     await api.stop()
+
+
+async def test_join_space():
+    """Test join space."""
+    api = ZygoteAPI()
+    await api.start("sqlite://:memory:")
+    space = await api.create_space("test")
+    agent = await api.create_agent("test")
+    await api.join_space(space["uuid"], agent["uuid"])
+    agent_joined = await api.get_agent(agent["uuid"])
+    assert  space["uuid"] in agent_joined["spaces"]
+    await api.stop()
+
+
+async def test_leave_space():
+    """Test leave space."""
+    api = ZygoteAPI()
+    await api.start("sqlite://:memory:")
+    space = await api.create_space("test")
+    agent = await api.create_agent("test")
+    await api.join_space(space["uuid"], agent["uuid"])
+    await api.leave_space(space["uuid"], agent["uuid"])
+    agent_joined = await api.get_agent(agent["uuid"])
+    assert  space["uuid"] not in agent_joined["spaces"]
+    await api.stop()

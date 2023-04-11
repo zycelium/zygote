@@ -239,3 +239,15 @@ class ZygoteAPI:
         except Exception:  # pylint: disable=broad-except
             self.logger.error("Failed to join space: %s", space_uuid)
             return {"success": False}
+
+    async def leave_space(self, space_uuid: int, agent_uuid: int) -> dict:
+        """Leave space."""
+        self.logger.info("Leaving space")
+        try:
+            space_obj = await Space.get(uuid=space_uuid)
+            agent_obj = await Agent.get(uuid=agent_uuid)
+            await space_obj.agents.remove(agent_obj)  # type: ignore
+            return {"success": True}
+        except Exception:  # pylint: disable=broad-except
+            self.logger.error("Failed to leave space: %s", space_uuid)
+            return {"success": False}
