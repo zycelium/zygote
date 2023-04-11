@@ -9,7 +9,6 @@ from quart import (
     Quart,
     ResponseReturnValue,
     request,
-    jsonify,
     render_template,
     redirect,
     url_for,
@@ -24,7 +23,6 @@ from quart_auth import (
     current_user,
 )
 from quart_cors import cors
-from tortoise.fields import data
 
 from zycelium.zygote.api import ZygoteAPI
 from zycelium.zygote.logging import get_logger
@@ -117,7 +115,9 @@ async def http_frames():
             data = form["data"]
             agent = form["agent"]
             spaces = form.getlist("spaces")
-            frame = await api.create_frame(kind=kind, name=name, data=data, agent_uuid=agent, space_uuids=spaces)
+            frame = await api.create_frame(
+                kind=kind, name=name, data=data, agent_uuid=agent, space_uuids=spaces
+            )
             return redirect(f"/frames/{frame['uuid']}")
         except Exception as err:
             raise err
