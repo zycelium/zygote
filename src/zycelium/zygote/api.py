@@ -21,9 +21,8 @@ from zycelium.zygote.models import (
 
 class ZygoteAPI:
     """Zygote API."""
-    def __init__(self, app):
+    def __init__(self):
         """Initialize."""
-        self.app = app
         self.logger = get_logger("zygote.api")
         self.logger.info("Initializing Zygote API")
 
