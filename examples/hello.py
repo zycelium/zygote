@@ -10,7 +10,6 @@ agent = Agent("example")
 @agent.on("connect")
 async def on_connect() -> None:
     """On connect."""
-    print("Connected to server")
     await agent.emit("hello", {"name": agent.name})
 
 
