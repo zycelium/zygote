@@ -27,18 +27,19 @@ from quart_cors import cors
 from zycelium.zygote.api import ZygoteAPI
 from zycelium.zygote.logging import get_logger
 from zycelium.zygote.supervisor import Supervisor
+from zycelium.zygote.utils import secret_key
 
-ZYGOTE_SECRET_KEY = environ.get("ZYGOTE_SECRET_KEY", None)
-if not ZYGOTE_SECRET_KEY:
-    raise ValueError("ZYGOTE_SECRET_KEY not set")
+app_dir = Path(get_app_dir("zygote"))
+app_tls_cert_path = app_dir / "cert.pem"
+app_tls_key_path = app_dir / "key.pem"
+app_db_path = Path("zygote.db").absolute()  # pylint: disable=invalid-name
+
 
 app = Quart(__name__)
-app.secret_key = ZYGOTE_SECRET_KEY
+app.secret_key = secret_key(app_dir / "secret")
 
 quart_auth = AuthManager(app)
 app = cors(app, allow_origin="*")
-app_dir = Path(get_app_dir("zygote"))
-app_db_path = Path("zygote.db").absolute()  # pylint: disable=invalid-name
 
 sup = Supervisor()
 log = get_logger("zygote.server")
