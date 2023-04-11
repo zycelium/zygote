@@ -35,7 +35,7 @@ app_db_path = Path("zygote.db").absolute()  # pylint: disable=invalid-name
 
 
 app = Quart(__name__)
-app.secret_key = secret_key(app_dir / "secret")
+app.secret_key = secret_key(app_dir / "secret_key")
 
 quart_auth = AuthManager(app)
 app = cors(app, allow_origin="*")
