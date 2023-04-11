@@ -7,6 +7,9 @@ license = "BSD 3-Clause License"
 readme = "README.md"
 packages = [{include = "zycelium", from = "src"}]
 
+[tool.poetry.scripts]
+zygote = "zycelium.zygote.cli:cli"
+
 [tool.poetry.dependencies]
 python = "^3.10"
 click = "^8.1.3"
