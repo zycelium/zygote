@@ -135,6 +135,14 @@ async def http_frame(uuid):
     return await render_template("frame.html", frame=frame)
 
 
+@app.route("/frames/<uuid>/delete", methods=["POST"])
+@login_required
+async def http_frame_delete(uuid):
+    """Frame delete route."""
+    await api.delete_frame(uuid)
+    return redirect("/frames")
+
+
 @app.route("/spaces", methods=["GET", "POST"])
 @login_required
 async def http_spaces():
