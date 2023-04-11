@@ -5,6 +5,11 @@
 {% block content %}
 <h1>Frame</h1>
 <ul>
-    <li>{{ frame }}</li>
+    <li>uuid: {{ frame.uuid }}</li>
+    <li>kind: {{ frame.kind }}</li>
+    <li>name: {{ frame.name }}</li>
+    <li>spaces: {{ frame.spaces }}</li>
+    <li>agent: {{ frame.agent }}</li>
+    <li>time: {{ frame.time }}</li>
 </ul>
 {% endblock %}

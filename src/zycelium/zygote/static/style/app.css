@@ -52,3 +52,11 @@ nav ul li form input {
     flex-direction: row;
     justify-content: space-between;
 }
+
+.inline {
+    display: inline-block;
+}
+
+.space-around {
+    margin: 0 1em 0 0;
+}

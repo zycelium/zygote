@@ -32,6 +32,9 @@ class Frame(Model):
     data = fields.JSONField(default={})
     meta = fields.JSONField(default={})
     time = fields.DatetimeField(auto_now_add=True, index=True)
+    agent = fields.ForeignKeyField(
+        "models.Agent", related_name="frames", null=True
+    )
 
     def __str__(self) -> str:
         return f"{self.kind}({self.name})"
@@ -59,6 +62,9 @@ class Space(Model):
     meta = fields.JSONField(default={})
     created_at = fields.DatetimeField(auto_now_add=True, index=True)
     updated_at = fields.DatetimeField(auto_now=True, index=True)
+    frames = fields.ManyToManyField(
+        "models.Frame", related_name="spaces", through="frame_space"
+    )
 
     def __str__(self) -> str:
         return f"{self.name}"
@@ -87,6 +93,9 @@ class Agent(Model):
     name = fields.CharField(max_length=64, index=True, null=False)
     data = fields.JSONField(default={})
     meta = fields.JSONField(default={})
+    spaces = fields.ManyToManyField(
+        "models.Space", related_name="agents", through="agent_space"
+    )
     created_at = fields.DatetimeField(auto_now_add=True, index=True)
     updated_at = fields.DatetimeField(auto_now=True, index=True)
 

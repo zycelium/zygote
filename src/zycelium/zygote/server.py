@@ -4,7 +4,6 @@ Zygote server.
 from os import environ
 from pathlib import Path
 
-from tortoise import Tortoise
 from click import get_app_dir
 from quart import (
     Quart,
@@ -25,6 +24,8 @@ from quart_auth import (
     current_user,
 )
 from quart_cors import cors
+from tortoise import Tortoise
+from tortoise.query_utils import Prefetch
 
 from zycelium.zygote.logging import get_logger
 from zycelium.zygote.models import (
@@ -108,13 +109,32 @@ async def get_data_and_redirect_url():
 @app.route("/api/v1/frames", methods=["POST"])
 async def post_frame():
     """Post frame."""
-    try:
-        data, redirect_url = await get_data_and_redirect_url()
-    except ValueError:
+    spaces = []
+    data = await request.get_json()
+    if data:
+        spaces = data.pop("spaces", [])
+    if not data:
+        form = await request.form
+        spaces = form.getlist("spaces")
+        data = form.to_dict()
+    if not data:
         return jsonify({"error": "No data."}), 400
-
+    redirect_url = data.get("redirect_url", None)
+    if redirect_url:
+        # Remove redirect url parameter from immutable data.
+        data = data.copy()
+        del data["redirect_url"]
+    agent = data.pop("agent", None)
+    data.pop("spaces", None)
     data = PydanticFrameIn(**data).dict()
     frame = await Frame.create(**data)
+    frame.agent = await Agent.get(uuid=agent)  # type: ignore
+    for space in spaces:
+        # check if agent has joined space
+        if not await frame.agent.spaces.filter(uuid=space).exists():
+            continue
+        await frame.spaces.add(await Space.get(uuid=space))  # type: ignore
+    await frame.save()
     pyframe = await PydanticFrame.from_tortoise_orm(frame)
     if redirect_url:
         return redirect(redirect_url)
@@ -252,31 +272,38 @@ async def http_logout():
 @app.route("/frames")
 async def http_frames():
     """Frames route."""
-    frames = await PydanticFrameList.from_queryset(Frame.all().limit(100))
-    return await render_template("frames.html", frames=frames.dict()["__root__"])
+    frames = await Frame.all().limit(100)
+    agents = await Agent.all()
+    spaces = await Space.all()
+    return await render_template(
+        "frames.html", frames=frames, agents=agents, spaces=spaces
+    )
 
 
 @app.route("/frames/<uuid>")
 async def http_frame(uuid):
     """Frame route."""
-    frame = await Frame.get(uuid=uuid)
-    pyframe = await PydanticFrame.from_tortoise_orm(frame)
-    return await render_template("frame.html", frame=pyframe.dict())
+    frame = await Frame.get(uuid=uuid).prefetch_related(
+        Prefetch("agent", queryset=Agent.all()),
+        Prefetch("spaces", queryset=Space.all()),
+    )
+    return await render_template("frame.html", frame=frame)
 
 
 @app.route("/spaces")
 async def http_spaces():
     """Spaces route."""
-    spaces = await PydanticSpaceList.from_queryset(Space.all().limit(100))
-    return await render_template("spaces.html", spaces=spaces.dict()["__root__"])
+    spaces = await Space.all().limit(100)
+    return await render_template("spaces.html", spaces=spaces)
 
 
 @app.route("/spaces/<uuid>")
 async def http_space(uuid):
     """Space route."""
-    space = await Space.get(uuid=uuid)
-    pyspace = await PydanticSpace.from_tortoise_orm(space)
-    return await render_template("space.html", space=pyspace.dict())
+    space = await Space.get(uuid=uuid).prefetch_related(
+        Prefetch("agents", queryset=Agent.all())
+    )
+    return await render_template("space.html", space=space)
 
 
 @app.route("/agents")
@@ -289,6 +316,33 @@ async def http_agents():
 @app.route("/agents/<uuid>")
 async def http_agent(uuid):
     """Agent route."""
+    agent = await Agent.get(uuid=uuid).prefetch_related(
+        Prefetch("spaces", queryset=Space.all())
+    )
+    spaces = await Space.all()
+    # spaces = await Space.exclude(
+    #     agents__uuid=uuid
+    # ).all()
+    return await render_template("agent.html", agent=agent, spaces=spaces)
+
+
+@app.route("/agents/<uuid>/join", methods=["POST"])
+async def http_agent_join_space(uuid):
+    """Agent join space route."""
+    form = await request.form
+    space_uuid = form.get("space_uuid")
+    space = await Space.get(uuid=space_uuid)
     agent = await Agent.get(uuid=uuid)
-    pyagent = await PydanticAgent.from_tortoise_orm(agent)
-    return await render_template("agent.html", agent=pyagent.dict())
+    await agent.spaces.add(space)
+    return redirect(f"/agents/{uuid}")
+
+
+@app.route("/agents/<uuid>/leave", methods=["POST"])
+async def http_agent_leave_space(uuid):
+    """Agent leave space route."""
+    form = await request.form
+    space_uuid = form.get("space_uuid")
+    space = await Space.get(uuid=space_uuid)
+    agent = await Agent.get(uuid=uuid)
+    await agent.spaces.remove(space)
+    return redirect(f"/agents/{uuid}")

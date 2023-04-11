@@ -10,6 +10,22 @@
     <form action="{{ url_for('post_frame') }}"" method="post">
         <input type="hidden" name="redirect_url" value="{{ url_for('http_frames') }}">
         <span class="form-field">
+            <label for="spaces">Spaces</label>
+            <select name="spaces" multiple>
+                {% for space in spaces %}
+                <option value="{{ space.uuid }}">{{ space.name }}</option>
+                {% endfor %}
+            </select>
+        </span>
+        <span class="form-field">
+            <label for="agent">Agent</label>
+            <select name="agent">
+                {% for agent in agents %}
+                <option value="{{ agent.uuid }}">{{ agent.name }}</option>
+                {% endfor %}
+            </select>
+        </span>
+        <span class="form-field">
             <label for="kind">Kind</label>
             <select name="kind">
                 <option value="event">event</option>

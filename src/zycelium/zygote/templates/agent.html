@@ -4,7 +4,42 @@
 
 {% block content %}
 <h1>Agent</h1>
+{{ agent }}
+<h2>Joined spaces</h2>
 <ul>
-    <li>{{ agent }}</li>
+    {% if agent.spaces|length == 0 %}
+    <li>None</li>
+    {% else %}
+        {% for space in agent.spaces %}
+            <li>
+                <a class="space-around" href="{{ url_for('http_space', uuid=space.uuid) }}">{{ space.name }}</a>
+                <form class="inline" action="{{ url_for('http_agent_leave_space', uuid=agent.uuid) }}" method="post">
+                    <input type="hidden" name="space_uuid" value="{{ space.uuid }}">
+                    <input class="inline" type="submit" value="Leave">
+                </form>
+            </li>
+        {% endfor %}
+    {% endif %}
 </ul>
+
+<h2>Join space</h2>
+{% if spaces|length == 0 %}
+<p>No unjoined spaces available</p>
+{% else %}
+<form action="{{ url_for('http_agent_join_space', uuid=agent.uuid) }}" method="post">
+    <label for="space_uuid">Space</label>
+    <select name="space_uuid">
+        {% for space in spaces %}
+        <option value="{{ space.uuid }}">{{ space.name }}</option>
+        {% endfor %}
+    </select>
+    <input type="submit" value="Join">
+</form>
+{% endif %}
+
+<h2>Caution</h2>
+<form action="/agent/{{ agent.id }}" method="post">
+    <input type="hidden" name="_method" value="delete">
+    <input type="submit" value="Delete agent">
+</form>
 {% endblock %}
