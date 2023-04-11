@@ -19,6 +19,7 @@ def disconnect(sid):
 
 
 @sio.on("*")
-async def frame(sid, data):
+async def frame(event, sid, data):
     """On frame."""
-    print("frame ", sid, data)
+    print("frame ", event, sid, data)
+    await sio.emit(event, data)
