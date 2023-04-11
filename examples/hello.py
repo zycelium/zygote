@@ -1,3 +1,6 @@
+"""
+Hello world example.
+"""
 from zycelium.zygote.agent import Agent
 
 
