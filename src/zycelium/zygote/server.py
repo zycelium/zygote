@@ -3,6 +3,7 @@ Zygote server.
 """
 from pathlib import Path
 
+import socketio
 from click import get_app_dir
 from quart import (
     Quart,
@@ -24,6 +25,7 @@ from quart_auth import (
 from quart_cors import cors
 
 from zycelium.zygote.api import ZygoteAPI
+from zycelium.zygote.broker import sio
 from zycelium.zygote.logging import get_logger
 from zycelium.zygote.supervisor import Supervisor
 from zycelium.zygote.utils import secret_key
@@ -38,6 +40,8 @@ app.secret_key = secret_key(app_dir / "secret_key")
 
 quart_auth = AuthManager(app)
 app = cors(app, allow_origin="*")
+
+sio_app = socketio.ASGIApp(sio, app)
 
 sup = Supervisor()
 log = get_logger("zygote.server")

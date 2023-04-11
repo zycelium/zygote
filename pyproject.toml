@@ -19,6 +19,7 @@ async-signals = "^0.1.5"
 tortoise-orm = "^0.19.3"
 pydantic = "^1.10.7"
 quart-auth = "^0.8.0"
+python-socketio = "^5.8.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.2"

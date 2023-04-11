@@ -21,7 +21,7 @@ def serve(host, port, tls, debug):
     log_level = "debug" if debug else "info"
     if tls:
         uvicorn.run(
-            "zycelium.zygote.server:app",
+            "zycelium.zygote.server:sio_app",
             host=host,
             port=port,
             log_level=log_level,
