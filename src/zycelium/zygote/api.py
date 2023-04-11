@@ -39,7 +39,7 @@ class ZygoteAPI:
         self.logger.info("Stopping")
         await Tortoise.close_connections()
 
-    async def create_space(self, name: str, data: Optional[dict] = None, meta: Optional[dict] = None):
+    async def create_space(self, name: str, data: Optional[dict] = None, meta: Optional[dict] = None) -> dict:
         """Create space."""
         self.logger.info("Creating space")
         data = data or {}
@@ -51,7 +51,7 @@ class ZygoteAPI:
             self.logger.error("Failed to create space: %s", name)
             return {"success": False}
     
-    async def get_space(self, space_uuid: int):
+    async def get_space(self, space_uuid: int) -> dict:
         """Get space."""
         self.logger.info("Getting space")
         try:
@@ -61,18 +61,18 @@ class ZygoteAPI:
             self.logger.error("Failed to get space: %s", space_uuid)
             return {"success": False}
     
-    async def get_spaces(self):
+    async def get_spaces(self) -> dict:
         """Get spaces."""
         self.logger.info("Getting spaces")
         try:
             spaces = await PydanticSpaceList.from_queryset(Space.all())
-            return spaces.dict()["__root__"]
+            return {"spaces": spaces.dict()["__root__"]}
         except Exception:  # pylint: disable=broad-except
             self.logger.error("Failed to get spaces")
             return {"success": False}
 
     
-    async def update_space(self, space_uuid: int, name: str, data: Optional[dict] = None, meta: Optional[dict] = None):
+    async def update_space(self, space_uuid: int, name: str, data: Optional[dict] = None, meta: Optional[dict] = None) -> dict:
         """Update space."""
         self.logger.info("Updating space")
         data = data or {}
@@ -88,7 +88,7 @@ class ZygoteAPI:
             self.logger.error("Failed to update space: %s", space_uuid)
             return {"success": False}
     
-    async def delete_space(self, space_uuid: int):
+    async def delete_space(self, space_uuid: int) -> dict:
         """Delete space."""
         self.logger.info("Deleting space")
         try:

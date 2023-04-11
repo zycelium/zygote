@@ -51,5 +51,5 @@ async def test_get_spaces():
     await api.create_space("test")
     await api.create_space("test2")
     spaces = await api.get_spaces()
-    assert len(spaces) == 2
+    assert len(spaces["spaces"]) == 2
     await api.stop()
