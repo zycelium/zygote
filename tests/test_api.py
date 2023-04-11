@@ -122,7 +122,7 @@ async def test_join_space():
     agent = await api.create_agent("test")
     await api.join_space(space["uuid"], agent["uuid"])
     agent_joined = await api.get_agent(agent["uuid"])
-    assert space["uuid"] in agent_joined["spaces"]
+    assert agent_joined["spaces"][0]["uuid"] == space["uuid"]
     await api.stop()
 
 

@@ -43,7 +43,7 @@ class ZygoteAPI:
         try:
             space_obj = await Space.create(name=name, data=data, meta=meta)
             space_dict = {
-                "uuid": space_obj.uuid,
+                "uuid": str(space_obj.uuid),
                 "name": space_obj.name,
                 "data": space_obj.data,
                 "meta": space_obj.meta,
@@ -57,12 +57,23 @@ class ZygoteAPI:
         """Get space."""
         self.logger.info("Getting space")
         try:
-            space_obj = await Space.get(uuid=space_uuid)
+            space_obj = await Space.get(uuid=space_uuid).prefetch_related(
+                Prefetch("agents", queryset=Agent.all())
+            )
             space_dict = {
-                "uuid": space_obj.uuid,
+                "uuid": str(space_obj.uuid),
                 "name": space_obj.name,
                 "data": space_obj.data,
                 "meta": space_obj.meta,
+                "agents": [
+                    {
+                        "uuid": str(agent.uuid),
+                        "name": agent.name,
+                        "data": agent.data,
+                        "meta": agent.meta,
+                    }
+                    for agent in space_obj.agents  # type: ignore
+                ],
             }
             return space_dict
         except Exception:  # pylint: disable=broad-except
@@ -77,7 +88,7 @@ class ZygoteAPI:
             spaces_list = []
             for space in spaces:
                 space_dict = {
-                    "uuid": space.uuid,
+                    "uuid": str(space.uuid),
                     "name": space.name,
                     "data": space.data,
                     "meta": space.meta,
@@ -106,7 +117,7 @@ class ZygoteAPI:
             space_obj.meta = meta  # type: ignore
             await space_obj.save()
             space_dict = {
-                "uuid": space_obj.uuid,
+                "uuid": str(space_obj.uuid),
                 "name": space_obj.name,
                 "data": space_obj.data,
                 "meta": space_obj.meta,
@@ -137,7 +148,7 @@ class ZygoteAPI:
         try:
             agent_obj = await Agent.create(name=name, data=data, meta=meta)
             agent_dict = {
-                "uuid": agent_obj.uuid,
+                "uuid": str(agent_obj.uuid),
                 "name": agent_obj.name,
                 "data": agent_obj.data,
                 "meta": agent_obj.meta,
@@ -155,11 +166,16 @@ class ZygoteAPI:
                 "spaces", Prefetch("spaces", queryset=Space.all())
             )
             agent_dict = {
-                "uuid": agent_obj.uuid,
+                "uuid": str(agent_obj.uuid),
                 "name": agent_obj.name,
                 "data": agent_obj.data,
                 "meta": agent_obj.meta,
-                "spaces": [space.uuid for space in await agent_obj.spaces],
+                "spaces": [{
+                    "uuid": str(space.uuid),
+                    "name": space.name,
+                    "data": space.data,
+                    "meta": space.meta,
+                } for space in await agent_obj.spaces],
             }
             return agent_dict
         except Exception:  # pylint: disable=broad-except
@@ -174,7 +190,7 @@ class ZygoteAPI:
             agents_list = []
             for agent in agents:
                 agent_dict = {
-                    "uuid": agent.uuid,
+                    "uuid": str(agent.uuid),
                     "name": agent.name,
                     "data": agent.data,
                     "meta": agent.meta,
@@ -203,7 +219,7 @@ class ZygoteAPI:
             agent_obj.meta = meta  # type: ignore
             await agent_obj.save()
             agent_dict = {
-                "uuid": agent_obj.uuid,
+                "uuid": str(agent_obj.uuid),
                 "name": agent_obj.name,
                 "data": agent_obj.data,
                 "meta": agent_obj.meta,
@@ -258,7 +274,7 @@ class ZygoteAPI:
             spaces_list = []
             for space in await agent_obj.spaces:
                 space_dict = {
-                    "uuid": space.uuid,
+                    "uuid": str(space.uuid),
                     "name": space.name,
                     "data": space.data,
                     "meta": space.meta,
@@ -280,7 +296,7 @@ class ZygoteAPI:
             for space in spaces:
                 if space not in joined_spaces:
                     space_dict = {
-                        "uuid": space.uuid,
+                        "uuid": str(space.uuid),
                         "name": space.name,
                         "data": space.data,
                         "meta": space.meta,
@@ -301,7 +317,7 @@ class ZygoteAPI:
             agents_list = []
             for agent in await space_obj.agents:  # type: ignore
                 agent_dict = {
-                    "uuid": agent.uuid,
+                    "uuid": str(agent.uuid),
                     "name": agent.name,
                     "data": agent.data,
                     "meta": agent.meta,
@@ -323,7 +339,7 @@ class ZygoteAPI:
             for agent in agents:
                 if agent not in joined_agents:
                     agent_dict = {
-                        "uuid": agent.uuid,
+                        "uuid": str(agent.uuid),
                         "name": agent.name,
                         "data": agent.data,
                         "meta": agent.meta,
@@ -360,7 +376,7 @@ class ZygoteAPI:
                 space_obj = await Space.get(uuid=space_uuid)
                 await frame_obj.spaces.add(space_obj)  # type: ignore
             frame_dict = {
-                "uuid": frame_obj.uuid,
+                "uuid": str(frame_obj.uuid),
                 "kind": frame_obj.kind,
                 "name": frame_obj.name,
                 "data": frame_obj.data,
@@ -383,7 +399,7 @@ class ZygoteAPI:
             )
             spaces_list = [
                 {
-                    "uuid": space.uuid,
+                    "uuid": str(space.uuid),
                     "name": space.name,
                     "data": space.data,
                     "meta": space.meta,
@@ -391,13 +407,14 @@ class ZygoteAPI:
                 for space in await frame_obj.spaces  # type: ignore
             ]  # type: ignore
             frame_dict = {
-                "uuid": frame_obj.uuid,
+                "uuid": str(frame_obj.uuid),
                 "kind": frame_obj.kind,
                 "name": frame_obj.name,
                 "data": frame_obj.data,
                 "meta": frame_obj.meta,
+                "time": frame_obj.time,
                 "agent": {
-                    "uuid": frame_obj.agent.uuid,
+                    "uuid": str(frame_obj.agent.uuid),
                     "name": frame_obj.agent.name,
                     "data": frame_obj.agent.data,
                     "meta": frame_obj.agent.meta,
@@ -407,6 +424,47 @@ class ZygoteAPI:
             return frame_dict
         except Exception:  # pylint: disable=broad-except
             self.logger.error("Failed to get frame")
+            return {"success": False}
+
+    async def get_frames(self) -> dict:
+        """Get frames."""
+        self.logger.info("Getting frames")
+        try:
+            frames = await Frame.all().prefetch_related(
+                "agent",
+                Prefetch("agent", queryset=Agent.all()),
+                "spaces",
+                Prefetch("spaces", queryset=Space.all()),
+            )
+            frames_list = []
+            for frame in frames:
+                spaces_list = [
+                    {
+                        "uuid": str(space.uuid),
+                        "name": space.name,
+                        "data": space.data,
+                        "meta": space.meta,
+                    }
+                    for space in await frame.spaces  # type: ignore
+                ]  # type: ignore
+                frame_dict = {
+                    "uuid": str(frame.uuid),
+                    "kind": frame.kind,
+                    "name": frame.name,
+                    "data": frame.data,
+                    "meta": frame.meta,
+                    "agent": {
+                        "uuid": str(frame.agent.uuid),
+                        "name": frame.agent.name,
+                        "data": frame.agent.data,
+                        "meta": frame.agent.meta,
+                    },
+                    "spaces": spaces_list,
+                }
+                frames_list.append(frame_dict)
+            return {"frames": frames_list}
+        except Exception:  # pylint: disable=broad-except
+            self.logger.error("Failed to get frames")
             return {"success": False}
 
     async def get_frames_for_agent(self, agent_uuid: int) -> dict:
@@ -419,7 +477,7 @@ class ZygoteAPI:
             frames_list = []
             for frame in await agent_obj.frames:  # type: ignore
                 frame_dict = {
-                    "uuid": frame.uuid,
+                    "uuid": str(frame.uuid),
                     "kind": frame.kind,
                     "name": frame.name,
                     "data": frame.data,
@@ -441,7 +499,7 @@ class ZygoteAPI:
             frames_list = []
             for frame in await space_obj.frames:  # type: ignore
                 frame_dict = {
-                    "uuid": frame.uuid,
+                    "uuid": str(frame.uuid),
                     "kind": frame.kind,
                     "name": frame.name,
                     "data": frame.data,
