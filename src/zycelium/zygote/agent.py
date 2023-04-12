@@ -2,6 +2,7 @@
 Agent.
 """
 import socketio
+from zycelium.zygote.logging import get_logger
 
 
 class Agent:
@@ -10,6 +11,7 @@ class Agent:
     def __init__(self, name: str) -> None:
         self.name = name
         self.spaces = {}
+        self.log = get_logger("zygote.agent")
         self.sio = socketio.AsyncClient(ssl_verify=False)
         self.on = self.sio.on  # pylint: disable=invalid-name
         self.sio.on("command", self._on_command)
@@ -34,15 +36,18 @@ class Agent:
             spaces = data["data"]["spaces"]
             self.name = agent_name
             self.spaces = {space["name"]: space for space in spaces}
-            print(f"Agent {agent_name} joined spaces: {', '.join(self.spaces.keys())}")
+            self.log.info(
+                "Agent %s joined spaces: %s", agent_name, ", ".join(self.spaces.keys())
+            )
         else:
-            print(f"Unknown command: {command}")
+            self.log.warning("Unknown command: %s", command)
 
     async def run(self, url: str, auth: dict) -> None:
         """Run agent."""
         try:
+            self.log.info("Connecting to %s", url)
             await self.connect(url, auth=auth)
         except socketio.exceptions.ConnectionError:
-            print("Connection error: check network connection, url or auth.")
+            self.log.fatal("Connection error: check network connection, url or auth.")
         finally:
             await self.sio.wait()
