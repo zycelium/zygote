@@ -75,23 +75,35 @@ async def on_command_identity(sid, data):
 
 
 @sio.on("command-config", namespace="/")
-async def on_command_config(sid, data):
+async def on_command_config(sid, frame):
     """On command config."""
     agent = SID_AGENT[sid]
-    log.info("Agent %s sent command: %s", agent["name"], data["name"])
+    log.info("Agent %s sent command: %s", agent["name"], frame["name"])
 
-    if data["name"] == "config":
-        log.info("Agent %s configured: %s", agent["name"], data["data"])
+    if frame["name"] == "config":
+        # Update agent config from Agent.data["config"] if available
+        # Create agent config if not available
+        # Reload agent from database
+        agent = await api.get_agent(agent["uuid"])
+        print(f"Agent: {agent!r}")
+        if agent["data"].get("config"):
+            config = agent["data"]["config"]
+            frame["data"] = {**frame["data"], **config}
+
+        agent = await api.update_agent(agent["uuid"], data={"config": frame["data"]})
+        SID_AGENT[sid] = agent
+
+        log.info("Agent %s configured: %s", agent["name"], frame["data"])
         await sio.emit(
             "command",
             {
                 "name": "config",
-                "data": data["data"],
+                "data": frame["data"],
             },
             room=sid,
         )
     else:
-        log.warning("Unknown command: %s", data["name"])
+        log.warning("Unknown command: %s", frame["name"])
 
 
 @sio.on("*", namespace="/")
