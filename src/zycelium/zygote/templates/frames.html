@@ -55,6 +55,7 @@
     <tr>
         <td><a href="{{ url_for('http_frame', uuid=frame.uuid) }}">{{frame.name}}</a></td>
         <td>{{frame.kind}}</td>
+        <td>{{frame.agent.name}}</td>
         <td><code>{{frame.data}}</code></td>
     </tr>
     {% endfor %}
