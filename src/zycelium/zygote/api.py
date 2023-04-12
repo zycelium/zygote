@@ -630,6 +630,33 @@ class ZygoteAPI:
             self.logger.error("Failed to get agent by token", exc_info=exc)
             return {"success": False}
 
+    async def get_agent_by_name(self, name: str) -> dict:
+        """Get agent by name."""
+        self.logger.info("Getting agent by name")
+        try:
+            agent_obj = await Agent.get(name=name).prefetch_related(
+                "spaces", Prefetch("spaces", queryset=Space.all())
+            )
+            agent_dict = {
+                "uuid": str(agent_obj.uuid),
+                "name": agent_obj.name,
+                "data": agent_obj.data,
+                "meta": agent_obj.meta,
+                "spaces": [
+                    {
+                        "uuid": str(space.uuid),
+                        "name": space.name,
+                        "data": space.data,
+                        "meta": space.meta,
+                    }
+                    for space in agent_obj.spaces
+                ],
+            }
+            return agent_dict
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get agent by name", exc_info=exc)
+            return {"success": False}
+
     async def get_auth_tokens_for_agent(self, agent_uuid: int) -> dict:
         """Get auth tokens for agent."""
         self.logger.info("Getting auth tokens for agent")
