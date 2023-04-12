@@ -190,7 +190,9 @@ async def http_agent(uuid):
     agent = await api.get_agent(uuid)
     spaces = (await api.get_spaces())["spaces"]
     tokens = (await api.get_auth_tokens_for_agent(uuid))["tokens"]
-    return await render_template("agent.html", agent=agent, spaces=spaces, tokens=tokens)
+    return await render_template(
+        "agent.html", agent=agent, spaces=spaces, tokens=tokens
+    )
 
 
 @app.route("/agents/<uuid>/update", methods=["POST"])
@@ -202,9 +204,19 @@ async def http_agent_update(uuid):
     data = form.get("data", None)
     meta = form.get("meta", None)
     if data:
-        data = data.replace("'", '"').replace("True", "true").replace("False", "false").replace("None", "null")
+        data = (
+            data.replace("'", '"')
+            .replace("True", "true")
+            .replace("False", "false")
+            .replace("None", "null")
+        )
     if meta:
-        meta = meta.replace("'", '"').replace("True", "true").replace("False", "false").replace("None", "null")
+        meta = (
+            meta.replace("'", '"')
+            .replace("True", "true")
+            .replace("False", "false")
+            .replace("None", "null")
+        )
     await api.update_agent(uuid, name=name, data=data, meta=meta)
     return redirect(f"/agents/{uuid}")
 
