@@ -193,6 +193,22 @@ async def http_agent(uuid):
     return await render_template("agent.html", agent=agent, spaces=spaces, tokens=tokens)
 
 
+@app.route("/agents/<uuid>/update", methods=["POST"])
+@login_required
+async def http_agent_update(uuid):
+    """Agent update route."""
+    form = await request.form
+    name = form.get("name", None)
+    data = form.get("data", None)
+    meta = form.get("meta", None)
+    if data:
+        data = data.replace("'", '"').replace("True", "true").replace("False", "false").replace("None", "null")
+    if meta:
+        meta = meta.replace("'", '"').replace("True", "true").replace("False", "false").replace("None", "null")
+    await api.update_agent(uuid, name=name, data=data, meta=meta)
+    return redirect(f"/agents/{uuid}")
+
+
 @app.route("/agents/<uuid>/join", methods=["POST"])
 @login_required
 async def http_agent_join_space(uuid):
