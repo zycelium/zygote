@@ -28,8 +28,29 @@ class Agent:
 
     async def emit(self, name: str, data: dict) -> None:
         """Emit event."""
-        frame = {"name": name, "data": data}
-        await self.sio.emit("event", frame)
+        kind = "event"
+        frame = {
+            "kind": kind,
+            "name": name, 
+            "data": data
+            }
+        await self.sio.emit(f"{kind}-{name}", frame)
+
+    def on_event(self, name: str):
+        """On event."""
+
+        def wrapper(func) -> None:
+            """Connect wrapper."""
+
+            async def inner(frame) -> None:
+                """Wrapper."""
+                if frame["name"] == name:
+                    await func(frame)
+            
+            self.sio.on(f"event-{name}", inner)
+            return func
+
+        return wrapper
 
     async def _on_command(self, data: dict) -> None:
         """On command."""

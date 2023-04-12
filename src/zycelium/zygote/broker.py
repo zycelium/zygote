@@ -11,7 +11,7 @@ log = get_logger("zygote.broker")
 SID_AGENT = {}
 
 
-@sio.on("connect")
+@sio.on("connect")  # pyright: reportOptionalCall=false
 async def connect(sid, _environ, auth: dict):
     """On connected."""
 
@@ -62,13 +62,14 @@ async def on_frame(event, sid, frame):
         # Filter spaces by name
         spaces = [s["uuid"] for s in agent["spaces"] if s["name"] in spaces]
 
-    frame_name = frame.pop("name", None)
+    frame_name = frame["name"]
+    kind = frame["kind"]
     if not frame_name:
         raise ValueError("Frame name not specified")
 
     # Store frame in database
     await api.create_frame(
-        kind=event,
+        kind=kind,
         name=frame_name,
         data=frame["data"],
         space_uuids=spaces,
