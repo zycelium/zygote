@@ -2,7 +2,7 @@
 Agent.
 """
 import asyncio
-from typing import Optional
+from typing import Awaitable, Callable, Optional
 
 import socketio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -21,6 +21,7 @@ class Agent:
         self.on = self.sio.on  # pylint: disable=invalid-name
         self.sio.on("command", self._handle_command)
         self._scheduler = self._init_scheduler()
+        self._on_startup_handler = None  # type: Optional[Callable[[], Awaitable[None]]]
 
     def _init_scheduler(self) -> AsyncIOScheduler:
         scheduler = AsyncIOScheduler()
@@ -56,6 +57,8 @@ class Agent:
             return
 
         try:
+            if self._on_startup_handler:
+                await self._on_startup_handler()
             self._start_scheduler()
             await self.sio.wait()
         except asyncio.exceptions.CancelledError:
@@ -81,6 +84,22 @@ class Agent:
             "data": data or {},
         }
         await self.sio.emit(f"{kind}-{name}", frame)
+
+    def on_startup(self, delay: float = 0.0):
+        """Startup event handler."""
+
+        def wrapper(func):
+            async def wrapped(*args, **kwargs):
+                await asyncio.sleep(delay)
+                await func(*args, **kwargs)
+
+            if asyncio.iscoroutinefunction(func):
+                self._on_startup_handler = wrapped
+            else:
+                raise TypeError("on_startup decorator must be used with a coroutine")
+            return func
+
+        return wrapper
 
     def on_event(self, name: str):
         """On event."""
