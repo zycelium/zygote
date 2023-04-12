@@ -20,6 +20,12 @@ async def on_hello(data: dict) -> None:
     await agent.disconnect()
 
 
+@agent.on("*")
+async def on_frame(event: str, data: dict) -> None:
+    """On frame."""
+    print(f"Frame: {event} {data}")
+
+
 if __name__ == "__main__":
     import asyncio
 
