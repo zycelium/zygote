@@ -108,6 +108,9 @@ async def on_frame(event, sid, frame):
 
     frame_name = frame["name"]
     kind = frame["kind"]
+    frame["meta"] = {
+        "agent": agent["name"],
+    }
     if not frame_name:
         raise ValueError("Frame name not specified")
 
