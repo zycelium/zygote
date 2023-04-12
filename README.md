@@ -1,2 +1,3 @@
 # zygote
-Zycelium Framework
+
+Zygote: Personal Automation Framework
