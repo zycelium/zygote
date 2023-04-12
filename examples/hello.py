@@ -27,6 +27,7 @@ async def goodbye(data: dict):
     print(f'Goodbye {data["name"]}')
     await agent.disconnect()
 
+
 @agent.on("*")  # type: ignore
 async def message(event: str, data: dict):
     """On frame."""
