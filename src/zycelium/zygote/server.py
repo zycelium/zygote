@@ -58,7 +58,7 @@ async def before_serving():
     for agent_name in discover_agents():
         url = "https://localhost:3965"
         agent = await api.get_agent_by_name(agent_name.split(".")[-1])
-        if agent:
+        if agent != {"success": False}:
             tokens = await api.get_auth_tokens_for_agent(agent["uuid"])
             if tokens:
                 token = tokens["tokens"][0]["token"]
@@ -69,7 +69,7 @@ async def before_serving():
             else:
                 log.error("No token found for agent: %s", agent_name)
         else:
-            log.error("No agent found: %s", agent_name)
+            log.error("No agent found in database: %s", agent_name)
     await sup.start()
 
 
