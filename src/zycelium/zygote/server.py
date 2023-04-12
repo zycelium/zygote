@@ -24,7 +24,7 @@ from quart_auth import (
 )
 from quart_cors import cors
 
-from zycelium.zygote.api import ZygoteAPI
+from zycelium.zygote.api import api
 from zycelium.zygote.broker import sio
 from zycelium.zygote.logging import get_logger
 from zycelium.zygote.supervisor import Supervisor
@@ -45,7 +45,6 @@ sio_app = socketio.ASGIApp(sio, app)
 
 sup = Supervisor()
 log = get_logger("zygote.server")
-api = ZygoteAPI()
 
 # Hooks
 
