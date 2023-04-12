@@ -4,7 +4,10 @@
 
 {% block content %}
 <h1>Agent</h1>
-{{ agent }}
+<div>UUID: {{ agent.uuid }}</div>
+<div>Name: {{ agent.name }}</div>
+<div>Data: {{ agent.data }}</div>
+<div>Meta: {{ agent.meta }}</div>
 
 <!-- Form to update Agent -->
 <h2>Update</h2>
