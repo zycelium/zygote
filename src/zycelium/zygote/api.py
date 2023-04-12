@@ -1,7 +1,6 @@
 """
 Zygote API.
 """
-import json
 import secrets
 from typing import Optional
 
@@ -45,7 +44,7 @@ class ZygoteAPI:
         meta = meta or {}
         try:
             space_obj = await Space.create(
-                name=name, data=json.dumps(data), meta=json.dumps(meta)
+                name=name, data=data, meta=meta
             )
             space_dict = {
                 "uuid": str(space_obj.uuid),
@@ -118,8 +117,8 @@ class ZygoteAPI:
         try:
             space_obj = await Space.get(uuid=space_uuid)
             space_obj.name = name  # type: ignore
-            space_obj.data = json.dumps(data)  # type: ignore
-            space_obj.meta = json.dumps(meta)  # type: ignore
+            space_obj.data = data  # type: ignore
+            space_obj.meta = meta  # type: ignore
             await space_obj.save()
             space_dict = {
                 "uuid": str(space_obj.uuid),
@@ -152,7 +151,7 @@ class ZygoteAPI:
         meta = meta or {}
         try:
             agent_obj = await Agent.create(
-                name=name, data=json.dumps(data), meta=json.dumps(meta)
+                name=name, data=data, meta=meta
             )
             agent_dict = {
                 "uuid": str(agent_obj.uuid),
@@ -226,14 +225,14 @@ class ZygoteAPI:
             agent_obj = await Agent.get(uuid=agent_uuid)
             if name:
                 agent_obj.name = name  # type: ignore
-            agent_obj.data = json.dumps(data)  # type: ignore
-            agent_obj.meta = json.dumps(meta)  # type: ignore
+            agent_obj.data = data  # type: ignore
+            agent_obj.meta = meta  # type: ignore
             await agent_obj.save()
             agent_dict = {
                 "uuid": str(agent_obj.uuid),
                 "name": agent_obj.name,
-                "data": json.loads(agent_obj.data),
-                "meta": json.loads(agent_obj.meta),
+                "data": agent_obj.data,
+                "meta": agent_obj.meta,
                 "spaces": [
                     {
                         "uuid": str(space.uuid),
@@ -390,7 +389,7 @@ class ZygoteAPI:
         space_uuids = space_uuids or []
         try:
             frame_obj = await Frame.create(
-                kind=kind, name=name, data=json.dumps(data), meta=json.dumps(meta)
+                kind=kind, name=name, data=data, meta=meta
             )
             if agent_uuid:
                 agent_obj = await Agent.get(uuid=agent_uuid)
