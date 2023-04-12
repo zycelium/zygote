@@ -35,7 +35,10 @@ async def connect(sid, _environ, auth: dict):
     # Send command: identity
     await sio.emit(
         "command",
-        {"name": "identity", "data": {"name": agent["name"], "spaces": agent["spaces"]}},
+        {
+            "name": "identity",
+            "data": {"name": agent["name"], "spaces": agent["spaces"]},
+        },
         room=sid,
     )
 
