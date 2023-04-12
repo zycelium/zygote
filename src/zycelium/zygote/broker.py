@@ -51,11 +51,30 @@ def disconnect(sid):
 
 
 @sio.on("*")
-async def frame(event, sid, data):
+async def on_frame(event, sid, frame):
     """On frame."""
-    # Store frames in database
-    # broadcast to all joined spaces if space not specified
     agent = SID_AGENT[sid]
+    spaces = frame.pop("spaces", [])
+    if not spaces:
+        # Use all joined spaces if spaces not specified
+        spaces = [s["uuid"] for s in agent["spaces"]]
+    else:
+        # Filter spaces by name
+        spaces = [s["uuid"] for s in agent["spaces"] if s["name"] in spaces]
 
-    print("frame ", event, agent["name"], data)
-    await sio.emit(event, data)
+    frame_name = frame.pop("name", None)
+    if not frame_name:
+        raise ValueError("Frame name not specified")
+
+    # Store frame in database
+    await api.create_frame(
+        kind=event,
+        name=frame_name,
+        data=frame["data"],
+        space_uuids=spaces,
+        agent_uuid=agent["uuid"],
+    )
+
+    # Broadcast frame to spaces
+    for space in spaces:
+        await sio.emit(event, frame, room=space)
