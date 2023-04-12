@@ -50,7 +50,7 @@ def disconnect(sid):
     log.info("Agent disconnected: %s", agent["name"] if agent else sid)
 
 
-@sio.on("*")
+@sio.on("*", namespace="/")
 async def on_frame(event, sid, frame):
     """On frame."""
     agent = SID_AGENT[sid]
