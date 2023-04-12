@@ -7,21 +7,28 @@ from zycelium.zygote.agent import Agent
 agent = Agent("example")
 
 
-@agent.on
-async def connect() -> None:
+@agent.on("connect")  # type: ignore
+async def connect():
     """On connect."""
+    print("Connected")
     await agent.emit("hello", {"name": agent.name})
 
 
-@agent.on
-async def hello(data: dict) -> None:
+@agent.on_event("hello")
+async def hello(data: dict):
     """On hello."""
     print(f'Hello {data["name"]}')
+    await agent.emit("goodbye", {"name": agent.name})
+
+
+@agent.on_event("goodbye")
+async def goodbye(data: dict):
+    """On goodbye."""
+    print(f'Goodbye {data["name"]}')
     await agent.disconnect()
 
-
-@agent.on
-async def message(event: str, data: dict) -> None:
+@agent.on("*")  # type: ignore
+async def message(event: str, data: dict):
     """On frame."""
     print(f"Frame: {event} {data}")
 
