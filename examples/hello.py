@@ -24,7 +24,10 @@ async def on_startup():
 @agent.on_event("hello")
 async def hello(data: dict):
     """On hello."""
-    print(f'Hello {data["name"]}')
+    if agent.config.shout:  # type: ignore
+        print(f'HELLO {data["name"].upper()}')
+    else:
+        print(f'Hello {data["name"]}')
 
 
 @agent.on_event("goodbye")
