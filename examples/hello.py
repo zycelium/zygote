@@ -7,10 +7,9 @@ from zycelium.zygote.agent import Agent
 agent = Agent("example")
 
 
-@agent.on("connect")  # type: ignore
-async def connect():
-    """On connect."""
-    print("Connected")
+@agent.on_startup()
+async def on_startup():
+    """On startup."""
     await agent.emit("hello", {"name": agent.name})
 
 
@@ -18,7 +17,6 @@ async def connect():
 async def hello(data: dict):
     """On hello."""
     print(f'Hello {data["name"]}')
-    await agent.emit("goodbye", {"name": agent.name})
 
 
 @agent.on_event("goodbye")
@@ -32,6 +30,12 @@ async def goodbye(data: dict):
 async def message(event: str, data: dict):
     """On frame."""
     print(f"Frame: {event} {data}")
+
+
+@agent.on_interval(seconds=5)
+async def on_interval():
+    """On interval."""
+    await agent.emit("goodbye", {"name": agent.name})
 
 
 if __name__ == "__main__":
