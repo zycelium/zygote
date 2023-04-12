@@ -50,6 +50,46 @@ def disconnect(sid):
     log.info("Agent disconnected: %s", agent["name"] if agent else sid)
 
 
+@sio.on("command-identity", namespace="/")
+async def on_command_identity(sid, data):
+    """On command identity."""
+
+    agent = SID_AGENT[sid]
+    log.info("Agent %s sent command: %s", agent["name"], data["name"])
+
+    if data["name"] == "identity":
+        await sio.emit(
+            "command",
+            {
+                "name": "identity",
+                "data": {"name": agent["name"], "spaces": agent["spaces"]},
+            },
+            room=sid,
+        )
+    else:
+        log.warning("Unknown command: %s", data["name"])
+
+
+@sio.on("command-config", namespace="/")
+async def on_command_config(sid, data):
+    """On command config."""
+    agent = SID_AGENT[sid]
+    log.info("Agent %s sent command: %s", agent["name"], data["name"])
+
+    if data["name"] == "config":
+        log.info("Agent %s configured: %s", agent["name"], data["data"])
+        await sio.emit(
+            "command",
+            {
+                "name": "config",
+                "data": data["data"],
+            },
+            room=sid,
+        )
+    else:
+        log.warning("Unknown command: %s", data["name"])
+
+
 @sio.on("*", namespace="/")
 async def on_frame(event, sid, frame):
     """On frame."""

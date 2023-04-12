@@ -1,10 +1,18 @@
 """
 Hello world example.
 """
-from zycelium.zygote.agent import Agent
+from zycelium.zygote.agent import Agent, config
+
+
+@config
+class Config:
+    """Config."""
+
+    shout: bool = False
 
 
 agent = Agent("example")
+agent.config = Config()
 
 
 @agent.on_startup()

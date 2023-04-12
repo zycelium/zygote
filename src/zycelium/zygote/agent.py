@@ -7,6 +7,7 @@ from typing import Awaitable, Callable, Optional
 import socketio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from socketio.exceptions import ConnectionError as SioConnectionError
+from zycelium.dataconfig import dataconfig as config
 from zycelium.zygote.logging import get_logger
 
 
@@ -15,6 +16,7 @@ class Agent:
 
     def __init__(self, name: str) -> None:
         self.name = name
+        self.config = None  # type: Optional[config.Config]
         self.spaces = {}
         self.log = get_logger("zygote.agent")
         self.sio = socketio.AsyncClient(ssl_verify=False)
@@ -44,14 +46,35 @@ class Agent:
             self.log.info(
                 "Agent %s joined spaces: %s", agent_name, ", ".join(self.spaces.keys())
             )
+        elif command == "config":
+            if self.config is None:
+                self.log.warning("Agent not configured")
+                return
+            self.config.from_dict(data["data"])
+            self.log.info("Agent configured: %s", data["data"])
         else:
             self.log.warning("Unknown command: %s", command)
+
+    async def _configure(self) -> None:
+        """Configure agent."""
+        if self.config is None:
+            return
+        await self.sio.emit(
+            "command-config",
+            {
+                "kind": "command",
+                "name": "config",
+                "data": self.config.to_dict(),
+            },
+            namespace="/",
+        )
 
     async def run(self, url: str, auth: dict) -> None:
         """Run agent."""
         try:
             self.log.info("Connecting to %s", url)
             await self.connect(url, auth=auth)
+            await self._configure()
         except SioConnectionError:
             self.log.fatal("Connection error: check network connection, url or auth.")
             return
