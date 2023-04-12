@@ -116,6 +116,6 @@ if __name__ == "__main__":
     asyncio.run(
         agent.run(
             "https://localhost:3965/",
-            auth={"token": "eO-4LQOfmIHiaOFM7ShnoZFZVuliw2n_t0ncJEQBMGs"},
+            auth={"token": ""},
         )
     )
