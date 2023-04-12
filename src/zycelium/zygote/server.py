@@ -28,7 +28,7 @@ from zycelium.zygote.api import api
 from zycelium.zygote.broker import sio
 from zycelium.zygote.logging import get_logger
 from zycelium.zygote.supervisor import Supervisor
-from zycelium.zygote.utils import secret_key
+from zycelium.zygote.utils import secret_key, py_string_to_dict
 
 app_dir = Path(get_app_dir("zygote"))
 app_tls_cert_path = app_dir / "cert.pem"
@@ -204,19 +204,9 @@ async def http_agent_update(uuid):
     data = form.get("data", None)
     meta = form.get("meta", None)
     if data:
-        data = (
-            data.replace("'", '"')
-            .replace("True", "true")
-            .replace("False", "false")
-            .replace("None", "null")
-        )
+        data = py_string_to_dict(data)
     if meta:
-        meta = (
-            meta.replace("'", '"')
-            .replace("True", "true")
-            .replace("False", "false")
-            .replace("None", "null")
-        )
+        meta = py_string_to_dict(meta)
     await api.update_agent(uuid, name=name, data=data, meta=meta)
     return redirect(f"/agents/{uuid}")
 
