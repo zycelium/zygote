@@ -24,6 +24,9 @@ class Agent:
         self.sio.on("command", self._handle_command)
         self._scheduler = self._init_scheduler()
         self._on_startup_handler = None  # type: Optional[Callable[[], Awaitable[None]]]
+        self._on_shutdown_handler = (
+            None
+        )  # type: Optional[Callable[[], Awaitable[None]]]
 
     def _init_scheduler(self) -> AsyncIOScheduler:
         scheduler = AsyncIOScheduler()
@@ -87,6 +90,8 @@ class Agent:
         except asyncio.exceptions.CancelledError:
             self.log.info("Agent %s stopped.", self.name)
         finally:
+            if self._on_shutdown_handler:
+                await self._on_shutdown_handler()
             self._stop_scheduler()
             await self.disconnect()
 
@@ -120,6 +125,18 @@ class Agent:
                 self._on_startup_handler = wrapped
             else:
                 raise TypeError("on_startup decorator must be used with a coroutine")
+            return func
+
+        return wrapper
+
+    def on_shutdown(self):
+        """Shutdown event handler."""
+
+        def wrapper(func):
+            if asyncio.iscoroutinefunction(func):
+                self._on_shutdown_handler = func
+            else:
+                raise TypeError("on_shutdown decorator must be used with a coroutine")
             return func
 
         return wrapper
