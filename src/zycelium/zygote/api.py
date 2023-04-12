@@ -1,6 +1,7 @@
 """
 Zygote API.
 """
+import json
 import secrets
 from typing import Optional
 
@@ -43,7 +44,9 @@ class ZygoteAPI:
         data = data or {}
         meta = meta or {}
         try:
-            space_obj = await Space.create(name=name, data=data, meta=meta)
+            space_obj = await Space.create(
+                name=name, data=json.dumps(data), meta=json.dumps(meta)
+            )
             space_dict = {
                 "uuid": str(space_obj.uuid),
                 "name": space_obj.name,
@@ -78,8 +81,8 @@ class ZygoteAPI:
                 ],
             }
             return space_dict
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to get space: %s", space_uuid)
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get space: %s", space_uuid, exc_info=exc)
             return {"success": False}
 
     async def get_spaces(self) -> dict:
@@ -97,8 +100,8 @@ class ZygoteAPI:
                 }
                 spaces_list.append(space_dict)
             return {"spaces": spaces_list}
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to get spaces")
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get spaces", exc_info=exc)
             return {"success": False}
 
     async def update_space(
@@ -115,8 +118,8 @@ class ZygoteAPI:
         try:
             space_obj = await Space.get(uuid=space_uuid)
             space_obj.name = name  # type: ignore
-            space_obj.data = data  # type: ignore
-            space_obj.meta = meta  # type: ignore
+            space_obj.data = json.dumps(data)  # type: ignore
+            space_obj.meta = json.dumps(meta)  # type: ignore
             await space_obj.save()
             space_dict = {
                 "uuid": str(space_obj.uuid),
@@ -125,8 +128,8 @@ class ZygoteAPI:
                 "meta": space_obj.meta,
             }
             return space_dict
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to update space: %s", space_uuid)
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to update space: %s", space_uuid , exc_info=exc)
             return {"success": False}
 
     async def delete_space(self, space_uuid: int) -> dict:
@@ -136,8 +139,8 @@ class ZygoteAPI:
             space_obj = await Space.get(id=space_uuid)
             await space_obj.delete()
             return {"success": True}
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to delete space: %s", space_uuid)
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to delete space: %s", space_uuid, exc_info=exc)
             return {"success": False}
 
     async def create_agent(
@@ -148,7 +151,9 @@ class ZygoteAPI:
         data = data or {}
         meta = meta or {}
         try:
-            agent_obj = await Agent.create(name=name, data=data, meta=meta)
+            agent_obj = await Agent.create(
+                name=name, data=json.dumps(data), meta=json.dumps(meta)
+            )
             agent_dict = {
                 "uuid": str(agent_obj.uuid),
                 "name": agent_obj.name,
@@ -156,8 +161,8 @@ class ZygoteAPI:
                 "meta": agent_obj.meta,
             }
             return agent_dict
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to create agent: %s", name)
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to create agent: %s", name, exc_info=exc)
             return {"success": False}
 
     async def get_agent(self, agent_uuid: int) -> dict:
@@ -183,8 +188,8 @@ class ZygoteAPI:
                 ],
             }
             return agent_dict
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to get agent: %s", agent_uuid)
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get agent: %s", agent_uuid, exc_info=exc)
             return {"success": False}
 
     async def get_agents(self) -> dict:
@@ -202,14 +207,14 @@ class ZygoteAPI:
                 }
                 agents_list.append(agent_dict)
             return {"agents": agents_list}
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to get agents")
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get agents", exc_info=exc)
             return {"success": False}
 
     async def update_agent(
         self,
         agent_uuid: int,
-        name: str,
+        name: Optional[str] = None,
         data: Optional[dict] = None,
         meta: Optional[dict] = None,
     ) -> dict:
@@ -219,19 +224,29 @@ class ZygoteAPI:
         meta = meta or {}
         try:
             agent_obj = await Agent.get(uuid=agent_uuid)
-            agent_obj.name = name  # type: ignore
-            agent_obj.data = data  # type: ignore
-            agent_obj.meta = meta  # type: ignore
+            if name:
+                agent_obj.name = name  # type: ignore
+            agent_obj.data = json.dumps(data)  # type: ignore
+            agent_obj.meta = json.dumps(meta)  # type: ignore
             await agent_obj.save()
             agent_dict = {
                 "uuid": str(agent_obj.uuid),
                 "name": agent_obj.name,
-                "data": agent_obj.data,
-                "meta": agent_obj.meta,
+                "data": json.loads(agent_obj.data),
+                "meta": json.loads(agent_obj.meta),
+                "spaces": [
+                    {
+                        "uuid": str(space.uuid),
+                        "name": space.name,
+                        "data": space.data,
+                        "meta": space.meta,
+                    }
+                    for space in await agent_obj.spaces
+                ],
             }
             return agent_dict
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to update agent: %s", agent_uuid)
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to update agent: %s", agent_uuid, exc_info=exc)
             return {"success": False}
 
     async def delete_agent(self, agent_uuid: int) -> dict:
@@ -241,8 +256,8 @@ class ZygoteAPI:
             agent_obj = await Agent.get(uuid=agent_uuid)
             await agent_obj.delete()
             return {"success": True}
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to delete agent: %s", agent_uuid)
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to delete agent: %s", agent_uuid, exc_info=exc)
             return {"success": False}
 
     async def join_space(self, space_uuid: int, agent_uuid: int) -> dict:
@@ -253,8 +268,8 @@ class ZygoteAPI:
             agent_obj = await Agent.get(uuid=agent_uuid)
             await space_obj.agents.add(agent_obj)  # type: ignore
             return {"success": True}
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to join space: %s", space_uuid)
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to join space: %s", space_uuid, exc_info=exc)
             return {"success": False}
 
     async def leave_space(self, space_uuid: int, agent_uuid: int) -> dict:
@@ -265,8 +280,8 @@ class ZygoteAPI:
             agent_obj = await Agent.get(uuid=agent_uuid)
             await space_obj.agents.remove(agent_obj)  # type: ignore
             return {"success": True}
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to leave space: %s", space_uuid)
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to leave space: %s", space_uuid, exc_info=exc)
             return {"success": False}
 
     async def get_joined_spaces(self, agent_uuid: int) -> dict:
@@ -286,8 +301,8 @@ class ZygoteAPI:
                 }
                 spaces_list.append(space_dict)
             return {"spaces": spaces_list}
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to get joined spaces")
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get joined spaces", exc_info=exc)
             return {"success": False}
 
     async def get_unjoined_spaces(self, agent_uuid: int) -> dict:
@@ -308,8 +323,8 @@ class ZygoteAPI:
                     }
                     spaces_list.append(space_dict)
             return {"spaces": spaces_list}
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to get unjoined spaces")
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get unjoined spaces", exc_info=exc)
             return {"success": False}
 
     async def get_joined_agents(self, space_uuid: int) -> dict:
@@ -329,8 +344,8 @@ class ZygoteAPI:
                 }
                 agents_list.append(agent_dict)
             return {"agents": agents_list}
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to get joined agents")
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get joined agents", exc_info=exc)
             return {"success": False}
 
     async def get_unjoined_agents(self, space_uuid: int) -> dict:
@@ -351,8 +366,8 @@ class ZygoteAPI:
                     }
                     agents_list.append(agent_dict)
             return {"agents": agents_list}
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to get unjoined agents")
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get unjoined agents", exc_info=exc)
             return {"success": False}
 
     async def create_frame(
@@ -374,7 +389,9 @@ class ZygoteAPI:
         meta = meta or {}
         space_uuids = space_uuids or []
         try:
-            frame_obj = await Frame.create(kind=kind, name=name, data=data, meta=meta)
+            frame_obj = await Frame.create(
+                kind=kind, name=name, data=json.dumps(data), meta=json.dumps(meta)
+            )
             if agent_uuid:
                 agent_obj = await Agent.get(uuid=agent_uuid)
                 frame_obj.agent = agent_obj  # type: ignore
@@ -390,8 +407,8 @@ class ZygoteAPI:
                 "meta": frame_obj.meta,
             }
             return frame_dict
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to create frame")
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to create frame", exc_info=exc)
             return {"success": False}
 
     async def get_frame(self, frame_uuid: int) -> dict:
@@ -429,8 +446,8 @@ class ZygoteAPI:
                 "spaces": spaces_list,
             }
             return frame_dict
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to get frame")
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get frame", exc_info=exc)
             return {"success": False}
 
     async def get_frames(self) -> dict:
@@ -470,8 +487,8 @@ class ZygoteAPI:
                 }
                 frames_list.append(frame_dict)
             return {"frames": frames_list}
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to get frames")
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get frames", exc_info=exc)
             return {"success": False}
 
     async def get_frames_for_agent(self, agent_uuid: int) -> dict:
@@ -492,8 +509,8 @@ class ZygoteAPI:
                 }
                 frames_list.append(frame_dict)
             return {"frames": frames_list}
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to get frames")
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get frames", exc_info=exc)
             return {"success": False}
 
     async def get_frames_for_space(self, space_uuid: int) -> dict:
@@ -514,8 +531,8 @@ class ZygoteAPI:
                 }
                 frames_list.append(frame_dict)
             return {"frames": frames_list}
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to get frames")
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get frames", exc_info=exc)
             return {"success": False}
 
     async def delete_frame(self, frame_uuid: int) -> dict:
@@ -525,8 +542,8 @@ class ZygoteAPI:
             frame_obj = await Frame.get(uuid=frame_uuid)
             await frame_obj.delete()
             return {"success": True}
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to delete frame")
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to delete frame", exc_info=exc)
             return {"success": False}
 
     async def create_auth_token(self, agent_uuid: int) -> dict:
@@ -547,8 +564,8 @@ class ZygoteAPI:
                 "token": token_obj.token,
             }
             return token_dict
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to create auth token")
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to create auth token", exc_info=exc)
             return {"success": False}
 
     async def get_auth_token(self, token_uuid: int) -> dict:
@@ -570,8 +587,8 @@ class ZygoteAPI:
                 "token": token_obj.token,
             }
             return token_dict
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to get auth token")
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get auth token", exc_info=exc)
             return {"success": False}
 
     async def delete_auth_token(self, token_uuid: int) -> dict:
@@ -581,8 +598,8 @@ class ZygoteAPI:
             token_obj = await AuthToken.get(uuid=token_uuid)
             await token_obj.delete()
             return {"success": True}
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to delete auth token")
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to delete auth token", exc_info=exc)
             return {"success": False}
 
     async def get_agent_by_token(self, token: str) -> dict:
@@ -610,8 +627,8 @@ class ZygoteAPI:
                 ],
             }
             return agent_dict
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to get agent by token")
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get agent by token", exc_info=exc)
             return {"success": False}
 
     async def get_auth_tokens_for_agent(self, agent_uuid: int) -> dict:
@@ -629,8 +646,8 @@ class ZygoteAPI:
                 }
                 tokens_list.append(token_dict)
             return {"tokens": tokens_list}
-        except Exception:  # pylint: disable=broad-except
-            self.logger.error("Failed to get auth tokens for agent")
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get auth tokens for agent", exc_info=exc)
             return {"success": False}
 
 
