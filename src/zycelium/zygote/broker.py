@@ -78,3 +78,10 @@ async def on_frame(event, sid, frame):
     # Broadcast frame to spaces
     for space in spaces:
         await sio.emit(event, frame, room=space)
+
+    log.info(
+        "Agent %s emitted frame %s to spaces: %s",
+        agent["name"],
+        frame_name,
+        ", ".join(spaces),
+    )
