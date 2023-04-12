@@ -1,7 +1,9 @@
 """
 Agent.
 """
+import asyncio
 import socketio
+from socketio.exceptions import ConnectionError as SioConnectionError
 from zycelium.zygote.logging import get_logger
 
 
@@ -48,7 +50,11 @@ class Agent:
         try:
             self.log.info("Connecting to %s", url)
             await self.connect(url, auth=auth)
-        except socketio.exceptions.ConnectionError:
+        except SioConnectionError:
             self.log.fatal("Connection error: check network connection, url or auth.")
-        finally:
+            return
+
+        try:
             await self.sio.wait()
+        except asyncio.exceptions.CancelledError:
+            self.log.info("Agent %s stopped.", self.name)
