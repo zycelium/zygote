@@ -18,7 +18,11 @@ async def connect(sid, _environ, auth: dict):
     log.info("Agent connected: %s", sid)
 
     # Authenticate agent
-    agent = await api.get_agent_by_token(auth["token"])
+    try:
+        agent = await api.get_agent_by_token(auth["token"])
+    except Exception as exc:
+        log.error("Error getting agent by token: %s", exc)
+        return False
     if agent == {"success": False}:
         log.error("Invalid token: %s", auth["token"])
         return False
