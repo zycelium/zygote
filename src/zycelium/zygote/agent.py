@@ -24,9 +24,10 @@ class Agent:
         """Disconnect from server."""
         await self.sio.disconnect()
 
-    async def emit(self, event: str, data: dict) -> None:
+    async def emit(self, name: str, data: dict) -> None:
         """Emit event."""
-        await self.sio.emit(event, data)
+        frame = {"name": name, "data": data}
+        await self.sio.emit("event", frame)
 
     async def _on_command(self, data: dict) -> None:
         """On command."""
