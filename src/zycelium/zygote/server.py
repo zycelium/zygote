@@ -27,6 +27,7 @@ from quart_cors import cors
 from zycelium.zygote.api import api
 from zycelium.zygote.broker import sio
 from zycelium.zygote.logging import get_logger
+from zycelium.zygote.plugin import discover_agents, start_agent
 from zycelium.zygote.supervisor import Supervisor
 from zycelium.zygote.utils import secret_key, py_string_to_dict
 
@@ -54,6 +55,21 @@ async def before_serving():
     """Startup hook."""
     log.info("Starting server")
     await api.start(f"sqlite://{app_db_path}")
+    for agent_name in discover_agents():
+        url = "https://localhost:3965"
+        agent = await api.get_agent_by_name(agent_name.split(".")[-1])
+        if agent:
+            tokens = await api.get_auth_tokens_for_agent(agent["uuid"])
+            if tokens:
+                token = tokens["tokens"][0]["token"]
+                auth = {"token": token}
+                await sup.add_process(
+                    agent_name, start_agent, agent_name, url=url, auth=auth
+                )
+            else:
+                log.error("No token found for agent: %s", agent_name)
+        else:
+            log.error("No agent found: %s", agent_name)
     await sup.start()
 
 
