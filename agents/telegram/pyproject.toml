@@ -1,0 +1,8 @@
+[project]
+name = "zycelium.agents.telegram"
+version = "0.1.0"
+dependencies = ["pyrogram", "tgcrypto"]
+
+
+[project.entry-points."zycelium.agents"]
+telegram = "telegram"

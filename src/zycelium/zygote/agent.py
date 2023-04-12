@@ -1,42 +1,32 @@
 """
-Zygote agent.
+Agent.
 """
 import asyncio
-import logging
-from typing import Optional
+from typing import Awaitable, Callable, Optional
 
 import socketio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from socketio.exceptions import ConnectionError as SioConnectionError
+from zycelium.dataconfig import dataconfig as config
+from zycelium.zygote.logging import get_logger
 
 
 class Agent:
-    """Zygote agent."""
+    """Agent."""
 
-    def __init__(self, name: str, debug: bool = False) -> None:
+    def __init__(self, name: str) -> None:
         self.name = name
-        self.debug = debug
-        self.config = {}
-        self._log = None  # type: logging.Logger  # type: ignore
-        self._sio = self._init_sio()
+        self.config = None  # type: Optional[config.Config]
+        self.spaces = {}
+        self.log = get_logger("zygote.agent")
+        self.sio = socketio.AsyncClient(ssl_verify=False)
+        self.on = self.sio.on  # pylint: disable=invalid-name
+        self.sio.on("command", self._handle_command)
         self._scheduler = self._init_scheduler()
-        self._on_startup_handler = None
-
-    def _init_sio(self) -> socketio.AsyncClient:
-        sio = socketio.AsyncClient(ssl_verify=False)
-        return sio
-
-    def _init_log(self, name: str, debug: bool) -> logging.Logger:
-        log = logging.getLogger(name)
-        log.setLevel(logging.DEBUG if debug else logging.INFO)
-        log.propagate = False
-        formatter = logging.Formatter(
-            "%(asctime)s - %(filename)s:%(lineno)s  - %(name)s - %(levelname)s - %(message)s"
-        )
-        handler = logging.StreamHandler()
-        handler.setLevel(logging.DEBUG if debug else logging.INFO)
-        handler.setFormatter(formatter)
-        log.addHandler(handler)
-        return log
+        self._on_startup_handler = None  # type: Optional[Callable[[], Awaitable[None]]]
+        self._on_shutdown_handler = (
+            None
+        )  # type: Optional[Callable[[], Awaitable[None]]]
 
     def _init_scheduler(self) -> AsyncIOScheduler:
         scheduler = AsyncIOScheduler()
@@ -47,6 +37,81 @@ class Agent:
 
     def _stop_scheduler(self) -> None:
         self._scheduler.shutdown()
+
+    async def _handle_command(self, data: dict) -> None:
+        """On command."""
+        command = data["name"]
+        if command == "identity":
+            agent_name = data["data"]["name"]
+            spaces = data["data"]["spaces"]
+            self.name = agent_name
+            self.spaces = {space["name"]: space for space in spaces}
+            self.log.info(
+                "Agent %s joined spaces: %s", agent_name, ", ".join(self.spaces.keys())
+            )
+        elif command == "config":
+            if self.config is None:
+                self.log.warning("Agent not configured")
+                return
+            self.config.from_dict(data["data"])
+            self.log.info("Agent configured: %s", data["data"])
+        else:
+            self.log.warning("Unknown command: %s", command)
+
+    async def _configure(self) -> None:
+        """Configure agent."""
+        if self.config is None:
+            return
+        await self.sio.emit(
+            "command-config",
+            {
+                "kind": "command",
+                "name": "config",
+                "data": self.config.to_dict(),
+            },
+            namespace="/",
+        )
+
+    async def run(self, url: str, auth: dict) -> None:
+        """Run agent."""
+        try:
+            self.log.info("Connecting to %s", url)
+            await self.connect(url, auth=auth)
+            await self._configure()
+        except SioConnectionError:
+            self.log.fatal("Connection error: check network connection, url or auth.")
+            return
+
+        try:
+            if self._on_startup_handler:
+                await self._on_startup_handler()
+            self._start_scheduler()
+            await self.sio.wait()
+        except asyncio.exceptions.CancelledError:
+            self.log.info("Agent %s stopped.", self.name)
+        finally:
+            if self._on_shutdown_handler:
+                await self._on_shutdown_handler()
+            self._stop_scheduler()
+            await self.disconnect()
+
+    async def connect(self, url: str, auth: dict) -> None:
+        """Connect to server."""
+        await self.sio.connect(url, auth=auth)
+
+    async def disconnect(self) -> None:
+        """Disconnect from server."""
+        await self.sio.disconnect()
+
+    async def emit(self, name: str, data: Optional[dict] = None) -> None:
+        """Emit event."""
+        kind = "event"
+        frame = {
+            "kind": kind,
+            "name": name,
+            "data": data or {},
+        }
+        await self.sio.emit(f"{kind}-{name}", frame)
 
     def on_startup(self, delay: float = 0.0):
         """Startup event handler."""
@@ -60,6 +125,34 @@ class Agent:
                 self._on_startup_handler = wrapped
             else:
                 raise TypeError("on_startup decorator must be used with a coroutine")
+            return func
+
+        return wrapper
+
+    def on_shutdown(self):
+        """Shutdown event handler."""
+
+        def wrapper(func):
+            if asyncio.iscoroutinefunction(func):
+                self._on_shutdown_handler = func
+            else:
+                raise TypeError("on_shutdown decorator must be used with a coroutine")
+            return func
+
+        return wrapper
+
+    def on_event(self, name: str):
+        """On event."""
+
+        def wrapper(func) -> None:
+            """Connect wrapper."""
+
+            async def inner(frame) -> None:
+                """Wrapper."""
+                if frame["name"] == name:
+                    await func(frame)
+
+            self.sio.on(f"event-{name}", inner)
             return func
 
         return wrapper
@@ -143,69 +236,3 @@ class Agent:
             return func
 
         return decorator
-
-    async def start(
-        self,
-        url: str,
-        debug: bool = False,
-        delay: float = 1,
-        auth: Optional[dict] = None,
-    ) -> None:
-        """Start the agent."""
-        self._log = self._init_log(name=self.name, debug=debug)
-        await asyncio.sleep(delay)
-        self._log.info("Starting agent...")
-        await self._sio.connect(url, auth=auth)
-        await self._init_config()
-        self._log.info("Agent started.")
-        self._start_scheduler()
-        if self._on_startup_handler:
-            await self._on_startup_handler()  # type: ignore
-        while True:
-            await asyncio.sleep(1)
-
-    async def stop(self) -> None:
-        """Stop the agent."""
-        assert self._log is not None
-        self._log.info("Stopping agent...")
-        self._stop_scheduler()
-        await self._sio.disconnect()
-        self._log.info("Agent stopped.")
-
-    async def emit(self, name: str, data: dict) -> None:
-        """Emit event."""
-        frame = {"kind": "event", "name": name, "data": data}
-        await self._sio.emit("event", data=frame)
-
-    def on(self, name: str):  # pylint: disable=invalid-name
-        """Frame handler."""
-
-        def decorator(func):
-            self._sio.on(name, func)
-            return func
-
-        return decorator
-
-    def on_event(self, name: str):
-        """Event handler."""
-
-        def decorator(func):
-            async def wrapper(kind, frame):
-                if kind == "event" and frame["name"] == name:
-                    await func(frame)
-
-            self._sio.on(name, wrapper)
-            return func
-
-        return decorator
-
-    async def _init_config(self) -> None:
-        """Initialize config."""
-        frame = await self._sio.call(
-            "command",
-            {"kind": "command", "name": "config", "data": self.config},
-            namespace="/",
-            timeout=10,
-        )
-        self.config = frame["data"]
-        self._log.info("Config initialized: %s", self.config)

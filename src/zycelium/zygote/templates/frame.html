@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Zygote - Frame{% endblock %}
+
+{% block content %}
+<h1>Frame</h1>
+<ul>
+    <li>uuid: {{ frame.uuid }}</li>
+    <li>kind: {{ frame.kind }}</li>
+    <li>name: {{ frame.name }}</li>
+    <li>spaces: {{ frame.spaces }}</li>
+    <li>agent: {{ frame.agent }}</li>
+    <li>time: {{ frame.time }}</li>
+</ul>
+
+<h2>Caution</h2>
+<form action="{{ url_for('http_frame_delete', uuid=frame.uuid) }}" method="post">
+    <input type="submit" value="Delete">
+</form>
+{% endblock %}

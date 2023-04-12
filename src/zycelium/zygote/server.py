@@ -1,245 +1,263 @@
 """
-Zygote server agent.
+Zygote server.
 """
-import asyncio
-import importlib
-import json
-import multiprocessing
-import pkgutil
-from datetime import datetime
 from pathlib import Path
-from typing import Iterable, Optional, Tuple
-from uuid import uuid4
 
-import click
 import socketio
-import uvicorn
-from quart import Quart, render_template
+from click import get_app_dir
+from quart import (
+    Quart,
+    ResponseReturnValue,
+    request,
+    render_template,
+    redirect,
+    url_for,
+)
+from quart_auth import (
+    AuthManager,
+    AuthUser,
+    Unauthorized,
+    login_required,
+    login_user,
+    logout_user,
+    current_user,
+)
 from quart_cors import cors
 
-from zycelium.zygote.agent import Agent
-from zycelium.zygote.tls_cert import generate_self_signed_cert
+from zycelium.zygote.api import api
+from zycelium.zygote.broker import sio
+from zycelium.zygote.logging import get_logger
+from zycelium.zygote.plugin import discover_agents, start_agent
+from zycelium.zygote.supervisor import Supervisor
+from zycelium.zygote.utils import secret_key, py_string_to_dict
+
+app_dir = Path(get_app_dir("zygote"))
+app_tls_cert_path = app_dir / "cert.pem"
+app_tls_key_path = app_dir / "key.pem"
+app_db_path = app_dir / "zygote.db"
+
+app = Quart(__name__)
+app.secret_key = secret_key(app_dir / "secret_key")
+
+quart_auth = AuthManager(app)
+app = cors(app, allow_origin="*")
+
+sio_app = socketio.ASGIApp(sio, app)
+
+sup = Supervisor()
+log = get_logger("zygote.server")
+
+# Hooks
 
 
-def start_agent(name: str, url: str, debug: bool = False, auth: Optional[dict] = None):
-    """Start agent."""
-    agent_module = importlib.import_module(name)
-    try:
-        print(f"Starting {name} agent...")
-        asyncio.run(agent_module.agent.start(url=url, debug=debug, auth=auth))
-    except KeyboardInterrupt:
-        pass
-    except asyncio.CancelledError:
-        pass
-
-
-class Server(Agent):
-    """Zygote server agent."""
-
-    def __init__(
-        self, name: str, debug: bool = False, *, allow_origin: str = "*"
-    ) -> None:
-        self.name = name
-        self.debug = debug
-        self.host = ""
-        self.port = 0
-        self._allow_origin = allow_origin
-        super().__init__(name=name, debug=debug)
-        self.config_path = self._config_dir()
-        self.resources_path = self._resources_dir()
-        self._quart_app = Quart(
-            self.name,
-            template_folder=str(self.resources_path.joinpath("templates")),
-        )
-        self._quart_app = cors(self._quart_app, allow_origin=self._allow_origin)
-        self._quart_app.config["DEBUG"] = self.debug
-        self._sio_app = socketio.ASGIApp(self._sio, self._quart_app)
-        self._quart_app.before_serving(self._on_startup)
-        self._quart_app.after_serving(self._on_shutdown)
-        self._sio.on(event="connect", namespace="/")(self._on_connect)
-        self._sio.on(event="disconnect", namespace="/")(self._on_disconnect)
-        self._sio.on(event="command", namespace="/")(self._on_command)
-        self._sio.on(event="*", namespace="/")(self._on_event)
-        self._quart_app.route("/")(self._http_index)
-        self._agents = {}
-        self._agents_sid = {}
-        self._agent_processes = {}
-
-    def _init_sio(self) -> socketio.AsyncServer:
-        sio = socketio.AsyncServer(
-            async_mode="asgi", cors_allowed_origins=self._allow_origin
-        )
-        return sio
-
-    def _resources_dir(self) -> Path:
-        return Path(__file__).parent
-
-    def _config_dir(self) -> Path:
-        """Ensure config directory."""
-        config_path = Path(click.get_app_dir("zygote"))
-        config_path.mkdir(exist_ok=True)
-        return config_path
-
-    def _ensure_tls_cert(self) -> Tuple[Path, Path]:
-        """Ensure TLS certificate."""
-        cert_path = self.config_path.joinpath("cert.pem")
-        key_path = self.config_path.joinpath("key.pem")
-        if not cert_path.exists() or not key_path.exists():
-            self._log.info("Generating self-signed TLS certificate...")
-            generate_self_signed_cert(cert_path, key_path)
-        self._log.info("Using TLS certificate: %s", cert_path)
-        return cert_path, key_path
-
-    def _discover_agents(self) -> Iterable[str]:
-        """Discover agents."""
-
-        def _iter_namespace(ns_pkg):
-            return pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + ".")
-
-        # Built-in agents
-        self._log.info("Discovering built-in agents...")
-        namespace = importlib.import_module("zycelium.zygote.agents")
-        for _, name, _ in _iter_namespace(namespace):
-            self._log.info("Found built-in agent: %s", name)
-            yield name
-
-        # Installable agents
-        self._log.info("Discovering installed agents")
-        namespace = importlib.import_module("zycelium.agents")
-        for _, name, _ in _iter_namespace(namespace):
-            self._log.info("Found installed agent: %s", name)
-            yield name
-
-    async def _on_startup(self) -> None:
-        """On startup."""
-        self._log.info("Starting up...")
-        for agent_name in self._discover_agents():
-            assert agent_name not in self._agent_processes, "Agent already running"
-            self._log.info("Loading agent: %s", agent_name)
-            auth = {
-                "agent": agent_name,
-                "token": uuid4().hex,
-            }
-            self._agents[agent_name] = {"auth": auth}
-            agent_process = multiprocessing.Process(
-                target=start_agent,
-                args=(
-                    agent_name,
-                    f"https://{self.host}:{self.port}/",
-                    self.debug,
-                    auth,
-                ),
-            )
-            agent_process.start()
-            self._agent_processes[agent_name] = agent_process
-
-    async def _on_shutdown(self) -> None:
-        """On shutdown."""
-        self._log.info("Shutting down...")
-        await self.stop()
-
-    async def _on_connect(self, sid: str, _environ: dict, auth: dict) -> None:
-        """On connect."""
-        agent_name = auth.get("agent", "")
-        agent_info = self._agents.get(agent_name, {})
-        agent_auth = agent_info.get("auth", {})
-        self._log.info("Client connected: %s as sid %s", agent_name, sid)
-        if agent_name in self._agents and auth.get("token") == agent_auth["token"]:
-            self._log.info("Client authenticated: %s", agent_name)
-            self._agents[agent_name]["sid"] = sid
-            self._agents[agent_name]["auth"] = auth
-            self._agents[agent_name]["config"] = {}
-            self._agents_sid[sid] = agent_name
-        else:
-            self._log.info("Client authentication failed: %s", sid)
-            await self._sio.disconnect(sid=sid)
-
-    async def _on_disconnect(self, sid: str) -> None:
-        """On disconnect."""
-        agent_name = self._agents_sid.pop(sid, None)
-        if agent_name:
-            self._log.info("Client disconnected: %s", agent_name)
-            self._agents.pop(agent_name, None)
-        else:
-            self._log.info("Client disconnected: %s", sid)
-
-    async def _on_event(self, kind: str, sid: str, frame: dict) -> None:
-        """On event."""
-        frame["timestamp"] = await self._get_timestamp()
-        await self._sio.emit(kind, frame, skip_sid=sid, namespace="/")
-        self._log.info("Client event: %s %s %s", sid, kind, frame)
-
-    async def _on_command(self, sid: str, frame: dict) -> dict:
-        """On command."""
-        if frame["name"] == "config":
-            frame["timestamp"] = await self._get_timestamp()
-            self._log.info("Client command: %s %s", sid, frame)
-            agent_name = self._agents_sid[sid]
-            agent_config = await self._load_agent_config(agent_name)
-            if agent_config:
-                frame["data"] = agent_config
+@app.before_serving
+async def before_serving():
+    """Startup hook."""
+    log.info("Starting server")
+    await api.start(f"sqlite://{app_db_path}")
+    for agent_name in discover_agents():
+        url = "https://localhost:3965"
+        agent = await api.get_agent_by_name(agent_name.split(".")[-1])
+        if agent != {"success": False}:
+            tokens = await api.get_auth_tokens_for_agent(agent["uuid"])
+            if tokens:
+                token = tokens["tokens"][0]["token"]
+                auth = {"token": token}
+                await sup.add_process(
+                    agent_name, start_agent, agent_name, url=url, auth=auth
+                )
             else:
-                await self._save_agent_config(agent_name, frame["data"])
-            self._agents[agent_name]["config"] = frame["data"]
-            return frame
+                log.error("No token found for agent: %s", agent_name)
         else:
-            self._log.info("Client command (skipped): %s %s", sid, frame)
-            return {}
+            log.error("No agent found in database: %s", agent_name)
+    await sup.start()
 
-    async def _load_agent_config(self, agent_name: str) -> dict:
-        """Load agent config."""
-        config_path = self.config_path.joinpath(f"{agent_name}.json")
-        if config_path.exists():
-            with config_path.open("r", encoding="utf-8") as config_file:
-                return json.load(config_file)
-        else:
-            return {}
 
-    async def _save_agent_config(self, agent_name: str, config: dict) -> None:
-        """Save agent config."""
-        config_path = self.config_path.joinpath(f"{agent_name}.json")
-        with config_path.open("w", encoding="utf-8") as config_file:
-            json.dump(config, config_file, indent=2)
+@app.after_serving
+async def after_serving():
+    """Shutdown hook."""
+    log.info("Stopping server")
+    await api.stop()
+    await sup.stop()
 
-    async def _get_timestamp(self) -> str:
-        """Get timestamp."""
-        return datetime.now().isoformat()
 
-    async def _http_index(self) -> str:
-        """Home page."""
-        return await render_template("index.html", agents=self._agents)
+@app.errorhandler(Unauthorized)
+async def redirect_to_login(*_: Exception) -> ResponseReturnValue:
+    """Redirect to login."""
+    return redirect(url_for("http_login"))
 
-    async def start(  # pylint: disable=arguments-differ
-        self, host: str, port: int
-    ) -> None:
-        """Start the server."""
-        self.host = host
-        self.port = port
-        self._log = self._init_log(name=self.name, debug=self.debug)
-        self._log.info("Starting server...")
-        tls_cert, tls_key = self._ensure_tls_cert()
-        self._start_scheduler()
-        uvconfig = uvicorn.Config(
-            self._sio_app,
-            host=self.host,
-            port=self.port,
-            log_level="debug" if self.debug else "info",
-            ssl_keyfile=str(tls_key),
-            ssl_certfile=str(tls_cert),
+
+# WebUI
+
+
+@app.route("/")
+@login_required
+async def http_index():
+    """Index route."""
+    return await render_template("index.html", user=current_user)
+
+
+@app.route("/login", methods=["GET", "POST"])
+async def http_login():
+    """Login route."""
+    if request.method == "POST":
+        form = await request.form
+        username = form.get("username")
+        password = form.get("password")
+        if username == "admin" and password == "admin":
+            login_user(AuthUser(auth_id="1"))
+            return redirect("/")
+        return "Bad username or password", 401
+    return await render_template("login.html")
+
+
+@app.route("/logout", methods=["POST"])
+@login_required
+async def http_logout():
+    """Logout route."""
+    logout_user()
+    return redirect("/")
+
+
+@app.route("/frames", methods=["GET", "POST"])
+@login_required
+async def http_frames():
+    """Frames route."""
+    if request.method == "POST":
+        form = await request.form
+        kind = form["kind"]
+        name = form["name"]
+        data = form["data"]
+        agent = form["agent"]
+        spaces = form.getlist("spaces")
+        frame = await api.create_frame(
+            kind=kind, name=name, data=data, agent_uuid=agent, space_uuids=spaces
         )
-        server = uvicorn.Server(config=uvconfig)
-        try:
-            await server.serve()
-        except KeyboardInterrupt:
-            self._log.info("Shutting down server...")
-        finally:
-            await self.stop()
-            self._log.info("Server stopped.")
+        return redirect(f"/frames/{frame['uuid']}")
 
-    async def stop(self) -> None:
-        """Stop the server."""
-        self._log.info("Stopping server...")
-        for name, process in self._agent_processes.items():
-            self._log.info("Stopping agent: %s", name)
-            process.terminate()
-            process.join()
+    frames = (await api.get_frames())["frames"]
+    agents = (await api.get_agents())["agents"]
+    spaces = (await api.get_spaces())["spaces"]
+    return await render_template(
+        "frames.html", frames=frames, agents=agents, spaces=spaces
+    )
+
+
+@app.route("/frames/<uuid>")
+@login_required
+async def http_frame(uuid):
+    """Frame route."""
+    frame = await api.get_frame(uuid)
+    return await render_template("frame.html", frame=frame)
+
+
+@app.route("/frames/<uuid>/delete", methods=["POST"])
+@login_required
+async def http_frame_delete(uuid):
+    """Frame delete route."""
+    await api.delete_frame(uuid)
+    return redirect("/frames")
+
+
+@app.route("/spaces", methods=["GET", "POST"])
+@login_required
+async def http_spaces():
+    """Spaces route."""
+    if request.method == "POST":
+        form = await request.form
+        name = form["name"]
+        data = form["data"]
+        meta = form["meta"]
+        space = await api.create_space(name=name, data=data, meta=meta)
+        return redirect(f"/spaces/{space['uuid']}")
+
+    spaces = (await api.get_spaces())["spaces"]
+    return await render_template("spaces.html", spaces=spaces)
+
+
+@app.route("/spaces/<uuid>")
+@login_required
+async def http_space(uuid):
+    """Space route."""
+    space = await api.get_space(uuid)
+    return await render_template("space.html", space=space)
+
+
+@app.route("/agents", methods=["GET", "POST"])
+@login_required
+async def http_agents():
+    """Agents route."""
+    if request.method == "POST":
+        form = await request.form
+        name = form["name"]
+        data = form["data"]
+        meta = form["meta"]
+        agent = await api.create_agent(name=name, data=data, meta=meta)
+        return redirect(f"/agents/{agent['uuid']}")
+
+    agents = (await api.get_agents())["agents"]
+    return await render_template("agents.html", agents=agents)
+
+
+@app.route("/agents/<uuid>")
+@login_required
+async def http_agent(uuid):
+    """Agent route."""
+    agent = await api.get_agent(uuid)
+    spaces = (await api.get_spaces())["spaces"]
+    tokens = (await api.get_auth_tokens_for_agent(uuid))["tokens"]
+    return await render_template(
+        "agent.html", agent=agent, spaces=spaces, tokens=tokens
+    )
+
+
+@app.route("/agents/<uuid>/update", methods=["POST"])
+@login_required
+async def http_agent_update(uuid):
+    """Agent update route."""
+    form = await request.form
+    name = form.get("name", None)
+    data = form.get("data", None)
+    meta = form.get("meta", None)
+    if data:
+        data = py_string_to_dict(data)
+    if meta:
+        meta = py_string_to_dict(meta)
+    await api.update_agent(uuid, name=name, data=data, meta=meta)
+    return redirect(f"/agents/{uuid}")
+
+
+@app.route("/agents/<uuid>/join", methods=["POST"])
+@login_required
+async def http_agent_join_space(uuid):
+    """Agent join space route."""
+    form = await request.form
+    space_uuid = form["space_uuid"]
+    await api.join_space(space_uuid, uuid)
+    return redirect(f"/agents/{uuid}")
+
+
+@app.route("/agents/<uuid>/leave", methods=["POST"])
+@login_required
+async def http_agent_leave_space(uuid):
+    """Agent leave space route."""
+    form = await request.form
+    space_uuid = form["space_uuid"]
+    await api.leave_space(space_uuid, uuid)
+    return redirect(f"/agents/{uuid}")
+
+
+@app.route("/agents/<uuid>/token", methods=["POST"])
+@login_required
+async def http_agent_create_auth_token(uuid):
+    """Agent create auth token route."""
+    await api.create_auth_token(uuid)
+    return redirect(f"/agents/{uuid}")
+
+
+@app.route("/agents/<uuid>/token/<token_uuid>/delete", methods=["POST"])
+@login_required
+async def http_agent_delete_auth_token(uuid, token_uuid):
+    """Agent delete auth token route."""
+    await api.delete_auth_token(token_uuid)
+    return redirect(f"/agents/{uuid}")

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Zygote - Login{% endblock %}
+
+{% block content %}
+    <form action="/login" method="post">
+        <input type="text" name="username" placeholder="Username" />
+        <input type="password" name="password" placeholder="Password" />
+        <input type="submit" value="Login" />
+    </form>
+{% endblock %}

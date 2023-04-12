@@ -1,19 +1,21 @@
 """
-Utility to generate self-signed certificate for TLS.
+Cryptographic utilities.
 """
 from pathlib import Path
 from OpenSSL import crypto
 
 
-def generate_self_signed_cert(cert_path: Path, key_path: Path) -> None:
+def generate_self_signed_certificate(
+    cert_path: Path, key_path: Path, valid_years: int
+) -> None:
     """
     Generate a self-signed certificate and private key.
     """
-    # create a key pair
+    # Create a key pair
     k = crypto.PKey()
     k.generate_key(crypto.TYPE_RSA, 4096)
 
-    # create a self-signed cert
+    # Create a self-signed cert
     cert = crypto.X509()
     cert.get_subject().C = "NA"
     cert.get_subject().ST = "local"
@@ -30,11 +32,12 @@ def generate_self_signed_cert(cert_path: Path, key_path: Path) -> None:
     )
     cert.set_serial_number(1000)
     cert.gmtime_adj_notBefore(0)
-    cert.gmtime_adj_notAfter(10 * 365 * 24 * 60 * 60)
+    cert.gmtime_adj_notAfter(valid_years * 365 * 24 * 60 * 60)
     cert.set_issuer(cert.get_subject())
     cert.set_pubkey(k)
     cert.sign(k, "sha512")
 
+    # Save certificate and private key
     with open(cert_path, "wt", encoding="utf-8") as cert_file:
         cert_file.write(
             crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8")
