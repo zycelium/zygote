@@ -22,18 +22,18 @@ async def on_startup():
 
 
 @agent.on_event("hello")
-async def hello(data: dict):
+async def hello(frame: dict):
     """On hello."""
     if agent.config.shout:  # type: ignore
-        print(f'HELLO {data["name"].upper()}')
+        print(f'HELLO {frame["data"]["name"].upper()}')
     else:
-        print(f'Hello {data["name"]}')
+        print(f'Hello {frame["data"]["name"]}')
 
 
 @agent.on_event("goodbye")
-async def goodbye(data: dict):
+async def goodbye(frame: dict):
     """On goodbye."""
-    print(f'Goodbye {data["name"]}')
+    print(f'Goodbye {frame["data"]["name"]}')
     await agent.disconnect()
 
 
@@ -43,7 +43,7 @@ async def message(event: str, data: dict):
     print(f"Frame: {event} {data}")
 
 
-@agent.on_interval(seconds=5)
+@agent.on_interval(seconds=2)
 async def on_interval():
     """On interval."""
     await agent.emit("goodbye", {"name": agent.name})
