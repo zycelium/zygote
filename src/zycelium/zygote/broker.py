@@ -20,7 +20,7 @@ async def connect(sid, _environ, auth: dict):
     # Authenticate agent
     try:
         agent = await api.get_agent_by_token(auth["token"])
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=broad-except
         log.error("Error getting agent by token: %s", exc)
         return False
     if agent == {"success": False}:
@@ -81,11 +81,7 @@ async def on_command_config(sid, frame):
     log.info("Agent %s sent command: %s", agent["name"], frame["name"])
 
     if frame["name"] == "config":
-        # Update agent config from Agent.data["config"] if available
-        # Create agent config if not available
-        # Reload agent from database
         agent = await api.get_agent(agent["uuid"])
-        print(f"Agent: {agent!r}")
         if agent["data"].get("config"):
             config = agent["data"]["config"]
             frame["data"] = {**frame["data"], **config}
@@ -140,7 +136,7 @@ async def on_frame(event, sid, frame):
         await sio.emit(event, frame, room=space)
 
     log.info(
-        "Agent %s emitted frame %s to spaces: %s",
+        "Agent %s sent frame %s to spaces: %s",
         agent["name"],
         frame_name,
         ", ".join(spaces),
