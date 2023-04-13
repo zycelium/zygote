@@ -1,0 +1,8 @@
+[project]
+name = "zycelium.agents.fediverse"
+version = "0.1.0"
+dependencies = ["Mastodon.py==1.8.0"]
+
+
+[project.entry-points."zycelium.agents"]
+fediverse = "fediverse"
