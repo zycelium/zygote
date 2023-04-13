@@ -111,6 +111,22 @@ class Agent:
         }
         await self.sio.emit(f"{kind}-{name}", frame)
 
+    async def config_update(self, **data) -> None:
+        """Update config."""
+        if self.config is None:
+            self.log.warning("Agent not configured")
+            return
+            
+        await self.sio.emit(
+            "command-config-update",
+            {
+                "kind": "command",
+                "name": "config-update",
+                "data": data,
+            },
+            namespace="/",
+        )        
+
     def on_startup(self, delay: float = 0.0):
         """Startup event handler."""
 

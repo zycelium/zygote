@@ -102,6 +102,32 @@ async def on_command_config(sid, frame):
         log.warning("Unknown command: %s", frame["name"])
 
 
+@sio.on("command-config-update", namespace="/")
+async def on_command_config_update(sid, frame):
+    """On command config update."""
+    agent = SID_AGENT[sid]
+    log.info("Agent %s sent command: %s", agent["name"], frame["name"])
+
+    if frame["name"] == "config-update":
+        agent = await api.get_agent(agent["uuid"])
+        config = agent["data"].get("config", {})
+        config.update(frame["data"])
+        agent = await api.update_agent(agent["uuid"], data={"config": config})
+        SID_AGENT[sid] = agent
+
+        log.info("Agent %s configured: %s", agent["name"], config)
+        await sio.emit(
+            "command",
+            {
+                "name": "config",
+                "data": config,
+            },
+            room=sid,
+        )
+    else:
+        log.warning("Unknown command: %s", frame["name"])
+
+
 @sio.on("*", namespace="/")
 async def on_frame(event, sid, frame):
     """On frame."""

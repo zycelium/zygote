@@ -26,8 +26,10 @@ async def hello(frame: dict):
     """On hello."""
     if agent.config.shout:  # type: ignore
         print(f'HELLO {frame["data"]["name"].upper()}')
+        await agent.config_update(shout=False)
     else:
         print(f'Hello {frame["data"]["name"]}')
+        await agent.config_update(shout=True)
 
 
 @agent.on_event("goodbye")
