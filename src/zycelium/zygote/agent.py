@@ -169,7 +169,7 @@ class Agent:
     ):  # pylint: disable=too-many-arguments
         """Schedule function to be called on interval"""
 
-        def decorator(func):
+        def wrapper(func):
             interval_kwargs = {
                 "seconds": seconds,
                 "minutes": minutes,
@@ -189,7 +189,7 @@ class Agent:
             )
             return func
 
-        return decorator
+        return wrapper
 
     def on_cron(
         self,
@@ -211,7 +211,7 @@ class Agent:
     ):  # pylint: disable=too-many-arguments,too-many-locals
         """Schedule function to be called on cron"""
 
-        def decorator(func):
+        def wrapper(func):
             self._scheduler.add_job(
                 func,
                 max_instances=max_instances,
@@ -233,4 +233,4 @@ class Agent:
             )
             return func
 
-        return decorator
+        return wrapper
