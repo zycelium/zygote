@@ -89,3 +89,15 @@ In the WebUI
 The above list of steps is merely a workaround for missing features
 such as reloading agents upon configuration changes. 
 Please note, this is a work in progress.
+
+
+## Credits:
+
+The project uses top 10,000 words from contemporary English to limit the vocabulary,
+in hope that the project will be approachable to non-native English speakers.
+
+The word-list is placed in the project directory as "dictionary.txt"
+
+Source:
+- https://github.com/first20hours/google-10000-english/
+- https://github.com/first20hours/google-10000-english/blob/master/google-10000-english-no-swears.txt
