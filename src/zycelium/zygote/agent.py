@@ -23,10 +23,8 @@ class Agent:
         self.on = self.sio.on  # pylint: disable=invalid-name
         self.sio.on("command", self._handle_command)
         self._scheduler = self._init_scheduler()
-        self._on_startup_handler = None  # type: Optional[Callable[[], Awaitable[None]]]
-        self._on_shutdown_handler = (
-            None
-        )  # type: Optional[Callable[[], Awaitable[None]]]
+        self._startup_handler = None  # type: Optional[Callable[[], Awaitable[None]]]
+        self._shutdown_handler = None  # type: Optional[Callable[[], Awaitable[None]]]
 
     def _init_scheduler(self) -> AsyncIOScheduler:
         scheduler = AsyncIOScheduler()
@@ -83,15 +81,15 @@ class Agent:
             return
 
         try:
-            if self._on_startup_handler:
-                await self._on_startup_handler()
+            if self._startup_handler:
+                await self._startup_handler()
             self._start_scheduler()
             await self.sio.wait()
         except asyncio.exceptions.CancelledError:
             self.log.info("Agent %s stopped.", self.name)
         finally:
-            if self._on_shutdown_handler:
-                await self._on_shutdown_handler()
+            if self._shutdown_handler:
+                await self._shutdown_handler()
             self._stop_scheduler()
             await self.disconnect()
 
@@ -122,7 +120,7 @@ class Agent:
                 await func(*args, **kwargs)
 
             if asyncio.iscoroutinefunction(func):
-                self._on_startup_handler = wrapped
+                self._startup_handler = wrapped
             else:
                 raise TypeError("on_startup decorator must be used with a coroutine")
             return func
@@ -134,7 +132,7 @@ class Agent:
 
         def wrapper(func):
             if asyncio.iscoroutinefunction(func):
-                self._on_shutdown_handler = func
+                self._shutdown_handler = func
             else:
                 raise TypeError("on_shutdown decorator must be used with a coroutine")
             return func
