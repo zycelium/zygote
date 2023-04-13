@@ -90,7 +90,10 @@ class Agent:
         finally:
             if self._shutdown_handler:
                 await self._shutdown_handler()
-            self._stop_scheduler()
+            try:
+                self._stop_scheduler()
+            except AttributeError:
+                pass
             await self.disconnect()
 
     async def connect(self, url: str, auth: dict) -> None:
