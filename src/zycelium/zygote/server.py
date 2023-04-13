@@ -1,6 +1,7 @@
 """
 Zygote server.
 """
+import json
 from pathlib import Path
 
 import socketio
@@ -217,6 +218,8 @@ async def http_agents():
 async def http_agent(uuid):
     """Agent route."""
     agent = await api.get_agent(uuid)
+    agent["data"] = json.dumps(agent["data"], indent=0)
+    agent["meta"] = json.dumps(agent["meta"], indent=0)
     spaces = (await api.get_spaces())["spaces"]
     tokens = (await api.get_auth_tokens_for_agent(uuid))["tokens"]
     return await render_template(
