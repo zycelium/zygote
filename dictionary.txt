@@ -3844,6 +3844,7 @@ golf
 gone
 gonna
 good
+goodbye
 goods
 google
 gordon
@@ -8046,6 +8047,7 @@ shot
 shots
 should
 shoulder
+shout
 show
 showcase
 showed
