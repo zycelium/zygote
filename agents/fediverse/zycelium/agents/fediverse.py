@@ -47,16 +47,13 @@ async def validate_config():
     return True
 
 
-@agent.on_startup(delay=1)
-async def startup():
-    """Startup."""
-    if not await validate_config():
-        return
-
-
 @agent.on_interval(seconds=20)
 async def get_bookmarks():
     """Get bookmarks."""
+    if not await validate_config():
+        log.info("Config not valid, skipping")
+        return
+
     log.info("Getting bookmarks")
     mastodon = Mastodon(
         client_id=agent.config.client_key,
