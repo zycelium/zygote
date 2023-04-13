@@ -47,6 +47,32 @@ sio_app = socketio.ASGIApp(sio, app)
 sup = Supervisor()
 log = get_logger("zygote.server")
 
+# Utils
+
+async def provision_and_start_agent(agent_name: str) -> None:
+    """Start an agent."""
+    log.info("Starting agent %s", agent_name)
+    url = "https://localhost:3965"
+    agent = await api.get_agent_by_name(agent_name.split(".")[-1])
+    if agent != {"success": False}:
+        tokens = await api.get_auth_tokens_for_agent(agent["uuid"])
+        if tokens:
+            token = tokens["tokens"][0]["token"]
+            auth = {"token": token}
+        else:
+            log.error("Creating token for agent: %s", agent_name)
+            token = await api.create_auth_token(agent["uuid"])
+            auth = {"token": token["token"]}
+    else:
+        log.error("Creating agent in database: %s", agent_name)
+        agent = await api.create_agent(agent_name.split(".")[-1])
+        token = await api.create_auth_token(agent["uuid"])
+        auth = {"token": token["token"]}
+
+    await sup.add_process(
+            agent_name, start_agent, agent_name, url=url, auth=auth
+        )
+
 # Hooks
 
 
@@ -56,20 +82,7 @@ async def before_serving():
     log.info("Starting server")
     await api.start(f"sqlite://{app_db_path}")
     for agent_name in discover_agents():
-        url = "https://localhost:3965"
-        agent = await api.get_agent_by_name(agent_name.split(".")[-1])
-        if agent != {"success": False}:
-            tokens = await api.get_auth_tokens_for_agent(agent["uuid"])
-            if tokens:
-                token = tokens["tokens"][0]["token"]
-                auth = {"token": token}
-                await sup.add_process(
-                    agent_name, start_agent, agent_name, url=url, auth=auth
-                )
-            else:
-                log.error("No token found for agent: %s", agent_name)
-        else:
-            log.error("No agent found in database: %s", agent_name)
+        await provision_and_start_agent(agent_name)
     await sup.start()
 
 
