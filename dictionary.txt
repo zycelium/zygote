@@ -3356,6 +3356,7 @@ february
 fed
 federal
 federation
+fediverse
 fee
 feed
 feedback
@@ -5425,6 +5426,7 @@ massive
 master
 mastercard
 masters
+Mastodon
 mat
 match
 matched
@@ -8782,6 +8784,7 @@ tel
 telecharger
 telecom
 telecommunications
+telegram
 telephone
 telephony
 telescope
