@@ -84,7 +84,7 @@ In the WebUI
   - In the Update section, configure agents if they require API keys.
 - Stop the server with Ctrl+C
 - Run it again
-- Watch your personal automation system so its thing
+- Watch your personal automation system do its thing
 
 The above list of steps is merely a workaround for missing features
 such as reloading agents upon configuration changes. 
