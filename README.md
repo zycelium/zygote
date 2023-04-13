@@ -58,21 +58,34 @@ If you don't have `poetry` installed, get it with `python3 -m pip install poetry
 
 Once running, you can access the WebUI at https://localhost:3965/
 
+
+Zygote has a few built-in agents and some that you can install as you need.
+Built in and installed agents are provisioned in the database automatically.
+To install extra agents, find them in the `agents` directory in the project root.
+
+Example:
+
+```
+poetry shell
+cd agents/openweather
+pip install -e .
+```
+
 ### Using Zygote
+
 
 In the WebUI
 
-- Create a Space or two
-- Create agents
-- Have the agents join spaces
-- Create a token for each agent
+
+- Create a Space named "home"
+- Go to the Agents page to see all available agents
+- Click on each agent name to open Agent page
+  - Join "home" space
+  - In the Update section, configure agents if they require API keys.
 - Stop the server with Ctrl+C
-- Run it again to load the built-in agents
-- Configure agents that need API keys
-- Restart server one more time 
+- Run it again
 - Watch your personal automation system so its thing
 
 The above list of steps is merely a workaround for missing features
-such auto-provisioning built-in agents and reloading agents upon
-configuration changes. 
-That is a work in progress.
+such as reloading agents upon configuration changes. 
+Please note, this is a work in progress.
