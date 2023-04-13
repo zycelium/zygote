@@ -76,7 +76,6 @@ pip install -e .
 
 In the WebUI
 
-
 - Create a Space named "home"
 - Go to the Agents page to see all available agents
 - Click on each agent name to open Agent page
@@ -94,7 +93,7 @@ Please note, this is a work in progress.
 ## Credits:
 
 The project uses top 10,000 words from contemporary English to limit the vocabulary,
-in hope that the project will be approachable to non-native English speakers.
+in hope that the project will be easy to approach for non-native English speakers.
 
 The word-list is placed in the project directory as "dictionary.txt"
 

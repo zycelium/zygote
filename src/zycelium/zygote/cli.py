@@ -1,5 +1,5 @@
 """
-Commandline interface.
+Command-line interface.
 """
 import click
 import uvicorn
@@ -8,7 +8,7 @@ from zycelium.zygote.server import app_tls_cert_path, app_tls_key_path
 
 @click.group()
 def cli():
-    """Zygote commandline interface."""
+    """Zygote command-line interface."""
 
 
 @cli.command()
