@@ -227,6 +227,14 @@ async def http_agent_update(uuid):
     return redirect(f"/agents/{uuid}")
 
 
+@app.route("/agents/<uuid>/delete", methods=["POST"])
+@login_required
+async def http_agent_delete(uuid):
+    """Agent delete route."""
+    await api.delete_agent(uuid)
+    return redirect("/agents")
+
+
 @app.route("/agents/<uuid>/join", methods=["POST"])
 @login_required
 async def http_agent_join_space(uuid):
