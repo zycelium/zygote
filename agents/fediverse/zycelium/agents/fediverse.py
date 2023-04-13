@@ -47,7 +47,7 @@ async def validate_config():
     return True
 
 
-@agent.on_interval(seconds=20)
+@agent.on_interval(minutes=1)
 async def get_bookmarks():
     """Get bookmarks."""
     if not await validate_config():
