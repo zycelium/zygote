@@ -140,3 +140,10 @@ zygote.db*
 
 # Telegram
 *.session*
+
+# JS plugins
+node_modules/
+.parcel-cache/
+.cache/
+yarn-error.log
+dist/
