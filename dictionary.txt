@@ -6171,6 +6171,7 @@ opened
 opening
 openings
 opens
+openweather
 opera
 operate
 operated
@@ -6404,6 +6405,7 @@ pastor
 pat
 patch
 patches
+patchwork
 patent
 patents
 path
