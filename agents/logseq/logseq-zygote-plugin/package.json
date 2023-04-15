@@ -1,8 +1,8 @@
 {
-  "name": "logseq-zycelium",
+  "name": "logseq-zygote",
   "version": "0.1.0",
-  "description": "Logseq Zycelium",
-  "repository": "https://github.com/hiway/logseq-zycelium",
+  "description": "Zygote Plugin for Logseq",
+  "repository": "https://github.com/zycelium/zygote",
   "author": "Harshad Sharma",
   "license": "MIT License",
   "private": true,
@@ -20,8 +20,8 @@
     "socket.io-client": "^4.5.2"
   },
   "logseq": {
-    "id": "logseq-zycelium",
-    "title": "Zycelium",
+    "id": "logseq-zygote",
+    "title": "Zygote",
     "icon": "icon.png"
   },
   "devDependencies": {
