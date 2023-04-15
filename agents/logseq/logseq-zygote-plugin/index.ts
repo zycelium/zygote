@@ -121,14 +121,14 @@ async function main() {
     socket.emit('logseq/ready', { "kind": "event", "name": "ready", "data": {} })
   })
 
-  socket.on('event-telegram/message', async (frame) => {
+  socket.on('event-logseq/append-to-journal', async (frame) => {
     console.log("Received message from Telegram:", frame)
 
-    if (frame.data.message.startsWith("/")) {
-      console.log("Ignoring command:", frame.data.message)
+    if (frame.data.text.startsWith("/")) {
+      console.log("Ignoring command:", frame.data.text)
       return
     }
-    const message = await prefixTimestamp(frame.data.message)
+    const message = await prefixTimestamp(frame.data.text)
 
     let todayJournalPage = await getTodayJournal()
     if (!todayJournalPage) {
