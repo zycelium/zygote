@@ -10,7 +10,8 @@ agent = Agent(name="patchwork")
 async def weather(frame):
     """Handle weather event."""
     await agent.emit(
-        "telegram/send", {"message": f"Current temperature: {frame['data']['main']['temp']}"}
+        "telegram/send",
+        {"message": f"Current temperature: {frame['data']['main']['temp']}"},
     )
 
 
@@ -20,4 +21,24 @@ async def bookmark(frame):
     await agent.emit(
         "telegram/send",
         {"message": f"New bookmark: {frame['data']['url']}"},
+    )
+    content = frame["data"]["content"]
+    url = frame["data"]["url"]
+    await agent.emit(
+        "logseq/append-to-journal",
+        {
+            "text": f"url:: {url}\n{content}",
+        },
+    )
+
+
+@agent.on_event("telegram/message")
+async def telegram_message(frame):
+    """Handle telegram message event."""
+    message = frame["data"]["message"]
+    await agent.emit(
+        "logseq/append-to-journal",
+        {
+            "text": message,
+        },
     )
