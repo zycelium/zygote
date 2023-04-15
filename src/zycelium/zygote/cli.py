@@ -2,8 +2,9 @@
 Command-line interface.
 """
 import click
+import trustme
 import uvicorn
-from zycelium.zygote.server import app_tls_cert_path, app_tls_key_path
+from zycelium.zygote.server import app_dir, app_tls_cert_path, app_tls_key_path
 
 
 @click.group()
@@ -20,6 +21,16 @@ def serve(host, port, tls, debug):
     """Start the server."""
     log_level = "debug" if debug else "info"
     if tls:
+        if not app_tls_key_path.exists() or not app_tls_cert_path.exists():
+            ca = trustme.CA()
+            server_cert = ca.issue_cert("localhost")
+
+            ca.cert_pem.write_to_path(str(app_dir / "ca.pem"))
+            server_cert.private_key_and_cert_chain_pem.write_to_path(
+                str(app_tls_key_path)
+            )
+            server_cert.cert_chain_pems[0].write_to_path(str(app_tls_cert_path))
+            
         uvicorn.run(
             "zycelium.zygote.server:sio_app",
             host=host,
@@ -27,6 +38,7 @@ def serve(host, port, tls, debug):
             log_level=log_level,
             ssl_keyfile=str(app_tls_key_path),
             ssl_certfile=str(app_tls_cert_path),
+            ssl_ca_certs=str(app_dir / "ca.pem"),
         )
     else:
         uvicorn.run(
