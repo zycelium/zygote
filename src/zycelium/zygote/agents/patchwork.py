@@ -42,3 +42,15 @@ async def telegram_message(frame):
             "text": message,
         },
     )
+
+
+@agent.on_event("logseq/new-journal-entry")
+async def logseq_new_journal_entry(frame):
+    """Handle logseq new journal entry event."""
+    block_uuid = frame["data"]["block_uuid"]
+    await agent.emit(
+        "telegram/send",
+        {
+            "message": f"New journal entry: {block_uuid}",
+        },
+    )
