@@ -36,6 +36,8 @@ Another agent can patch the events coming from one agent
 to another.
 
 The format of each frame is not fixed yet.
+And at the moment only events are available.
+More kinds of frames will be added later.
 
 ---
 
