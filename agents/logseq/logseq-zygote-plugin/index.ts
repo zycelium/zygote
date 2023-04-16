@@ -140,7 +140,7 @@ async function main() {
       logseq.App.showMsg("Cannot find target block.", "error")
       return
     }
-    await logseq.Editor.insertBlock(
+    const insertedBlock = await logseq.Editor.insertBlock(
       targetBlock.uuid,
       message,
       {
@@ -148,7 +148,10 @@ async function main() {
         sibling: false
       }
     )
-  
+    await socket.emit('event-logseq/new-journal-entry', { 
+      "kind": "event", 
+      "name": "logseq/new-journal-entry", 
+      "data": { "block_uuid": insertedBlock?.uuid } })
   })
 
   socket.onAny((event, ...args) => {
