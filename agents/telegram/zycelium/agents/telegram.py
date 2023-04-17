@@ -1,6 +1,7 @@
 """
 Telegram agent
 """
+import asyncio
 from pathlib import Path
 from traceback import format_exc
 from pyrogram.client import Client as TelegramClient
@@ -88,9 +89,11 @@ async def startup():
 @agent.on_shutdown()
 async def shutdown():
     """Shutdown Telegram bot."""
-    if TG:
-        await TG.stop()
-
+    try:
+        if TG:
+            await TG.stop()
+    except asyncio.CancelledError:
+        pass
 
 @agent.on_event("telegram/send")
 async def send(frame):
