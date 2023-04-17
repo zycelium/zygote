@@ -21,7 +21,7 @@ class Agent:
         self.log = get_logger("zygote.agent")
         self.sio = socketio.AsyncClient(ssl_verify=False)
         self.on = self.sio.on  # pylint: disable=invalid-name
-        self.sio.on("command", self._handle_command)
+        self.sio.on("*", self._handle_command, namespace="/command")
         self._scheduler = self._init_scheduler()
         self._startup_handler = None  # type: Optional[Callable[[], Awaitable[None]]]
         self._shutdown_handler = None  # type: Optional[Callable[[], Awaitable[None]]]
@@ -60,21 +60,15 @@ class Agent:
         """Configure agent."""
         if self.config is None:
             return
-        await self.sio.emit(
-            "command-config",
-            {
-                "kind": "command",
-                "name": "config",
-                "data": self.config.to_dict(),
-            },
-            namespace="/",
+        await self.command(
+            "config", self.config.to_dict(),
         )
 
     async def run(self, url: str, auth: dict) -> None:
         """Run agent."""
         try:
             self.log.info("Connecting to %s", url)
-            await self.connect(url, auth=auth)
+            await self.connect(url, auth=auth, namespaces=["/", "/command", "/event"])
             await self._configure()
         except SioConnectionError:
             self.log.fatal("Connection error: check network connection, url or auth.")
@@ -114,20 +108,21 @@ class Agent:
         }
         await self.sio.emit(f"{kind}-{name}", frame)
 
+    async def command(self, name: str, data: Optional[dict] = None) -> None:
+        await self.sio.emit(name, {
+            "kind": "command",
+            "name": name,
+            "data": data or {}
+        })
+
     async def config_update(self, **data) -> None:
         """Update config."""
         if self.config is None:
             self.log.warning("Agent not configured")
             return
             
-        await self.sio.emit(
-            "command-config-update",
-            {
-                "kind": "command",
-                "name": "config-update",
-                "data": data,
-            },
-            namespace="/",
+        await self.command(
+            "config-update", data
         )        
 
     def on_startup(self, delay: float = 0.0):
