@@ -60,15 +60,8 @@ class Agent:
         """Configure agent."""
         if self.config is None:
             return
-        await self.sio.emit(
-            "command-config",
-            {
-                "kind": "command",
-                "name": "config",
-                "data": self.config.to_dict(),
-            },
-            namespace="/",
-        )
+            
+        await self.command("config", self.config.to_dict())
 
     async def run(self, url: str, auth: dict) -> None:
         """Run agent."""
@@ -112,7 +105,7 @@ class Agent:
             "name": name,
             "data": data or {},
         }
-        await self.sio.emit(f"{kind}-{name}", frame)
+        await self.sio.emit(f"{kind}-{name}", frame, namespace="/")
 
     async def command(self, name: str, data: Optional[dict] = None) -> None:
         kind = "command"
@@ -121,7 +114,7 @@ class Agent:
             "name": name,
             "data": data,
         }
-        await self.sio.emit(f"{kind}-{name}", frame)
+        await self.sio.emit(f"{kind}-{name}", frame, namespace="/")
 
     async def config_update(self, **data) -> None:
         """Update config."""
@@ -129,15 +122,7 @@ class Agent:
             self.log.warning("Agent not configured")
             return
             
-        await self.sio.emit(
-            "command-config-update",
-            {
-                "kind": "command",
-                "name": "config-update",
-                "data": data,
-            },
-            namespace="/",
-        )        
+        await self.command("config-update", data)
 
     def on_startup(self, delay: float = 0.0):
         """Startup event handler."""
