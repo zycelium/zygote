@@ -114,6 +114,15 @@ class Agent:
         }
         await self.sio.emit(f"{kind}-{name}", frame)
 
+    async def command(self, name: str, data: Optional[dict] = None) -> None:
+        kind = "command"
+        frame = {
+            "kind": kind,
+            "name": name,
+            "data": data,
+        }
+        await self.sio.emit(f"{kind}-{name}", frame)
+
     async def config_update(self, **data) -> None:
         """Update config."""
         if self.config is None:
