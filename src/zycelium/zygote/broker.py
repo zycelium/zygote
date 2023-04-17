@@ -6,12 +6,12 @@ import socketio
 from zycelium.zygote.logging import get_logger
 from zycelium.zygote.api import api
 
-sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
+sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*", logger=True, engineio_logger=True)
 log = get_logger("zygote.broker")
 SID_AGENT = {}
 
 
-@sio.on("connect")  # pyright: reportOptionalCall=false
+@sio.on("connect", namespace="/")  # pyright: reportOptionalCall=false
 async def connect(sid, _environ, auth: dict):
     """On connected."""
 
@@ -47,7 +47,7 @@ async def connect(sid, _environ, auth: dict):
     )
 
 
-@sio.on("disconnect")
+@sio.on("disconnect", namespace="/")
 def disconnect(sid):
     """On disconnected."""
     agent = SID_AGENT.pop(sid, None)
