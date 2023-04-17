@@ -246,7 +246,24 @@ such as reloading agents upon configuration changes.
 Please note, this is a work in progress.
 
 
+### Contributing to Zygote
+
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](code_of_conduct.md) 
+
 ## Credits:
+
+#### Code of Conduct
+
+The code of conduct linked above in "Contributing…" section will be enforced.
+
+Resources:
+
+- https://mastodon.sharma.io/@harshad/110201926069199297
+- https://tatooine.club/@nemo/110211721982176801
+- https://www.contributor-covenant.org/
+- https://youtu.be/nizfHxg8y3o
+
+#### Vocabulary
 
 The project uses top 10,000 words from contemporary English to limit the vocabulary,
 in hope that the project will be easy to approach for non-native English speakers.
