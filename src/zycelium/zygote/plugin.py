@@ -26,11 +26,13 @@ def discover_agents() -> Iterable[str]:
 
     # Installed agents
     log.info("Discover installed agents")
-    namespace = importlib.import_module("zycelium.agents")
-    for _, name, _ in _iter_namespace(namespace):
-        log.info("Found installed agent: %s", name)
-        yield name
-
+    try:
+        namespace = importlib.import_module("zycelium.agents")
+        for _, name, _ in _iter_namespace(namespace):
+            log.info("Found installed agent: %s", name)
+            yield name
+    except ImportError:
+        log.info("Additional agents not installed.")
 
 def start_agent(agent_name: str, url: str, auth: dict) -> None:
     """Start an agent."""
