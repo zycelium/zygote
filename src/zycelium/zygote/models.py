@@ -105,3 +105,24 @@ class AuthToken(Model):
 
         table = "auth_token"
         ordering = ["-created_at"]
+
+
+class FileStore(Model):
+    """FileStore model"""
+
+    uuid = fields.UUIDField(pk=True, index=True)
+    name = fields.CharField(max_length=255, index=True, null=False, unique=True)
+    path = fields.CharField(max_length=255, index=True, null=False, unique=True)
+    meta = fields.JSONField(default={})
+    agent = fields.ForeignKeyField("models.Agent", related_name="files", null=True)
+    created_at = fields.DatetimeField(auto_now_add=True, index=True)
+    updated_at = fields.DatetimeField(auto_now=True, index=True)
+
+    def __str__(self) -> str:
+        return f"{self.name}"
+
+    class Meta:
+        """Meta class"""
+
+        table = "file_store"
+        ordering = ["created_at"]
