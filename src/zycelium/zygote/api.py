@@ -738,5 +738,15 @@ class ZygoteAPI:
             self.logger.error("Failed to create file", exc_info=exc)
             return {"success": False}
 
+    async def delete_file(self, file_uuid: int) -> dict:
+        """Delete file."""
+        self.logger.info("Deleting file %s", file_uuid)
+        try:
+            file_obj = await FileStore.get(uuid=file_uuid)
+            await file_obj.delete()
+            return {"success": True}
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to delete file", exc_info=exc)
+            return {"success": False}
 
 api = ZygoteAPI()
