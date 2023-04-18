@@ -17,7 +17,7 @@ class Frame(BaseModel):
     uuid: Optional[UUID] = None
 
     def to_dict(self) -> dict:
-        return {k:v for k, v in self.dict().items() if v}
+        return {k: v for k, v in self.dict().items() if v}
 
     def to_json(self) -> str:
         frame_dict = self.to_dict()
