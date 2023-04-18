@@ -80,11 +80,11 @@ async def on_command_config(sid, frame):
     agent = SID_AGENT[sid]
     if frame["name"] == "config":
         agent = await api.get_agent(agent["uuid"])
-        if agent["data"].get("config"):
-            config = agent["data"]["config"]
+        if agent["meta"].get("config"):
+            config = agent["meta"]["config"]
             frame["data"] = {**frame["data"], **config}
 
-        agent = await api.update_agent(agent["uuid"], data={"config": frame["data"]})
+        agent = await api.update_agent(agent["uuid"], meta={"config": frame["data"]})
         SID_AGENT[sid] = agent
 
         log.info("Agent %s configured.", agent["name"])
@@ -108,9 +108,9 @@ async def on_command_config_update(sid, frame):
 
     if frame["name"] == "config-update":
         agent = await api.get_agent(agent["uuid"])
-        config = agent["data"].get("config", {})
+        config = agent["meta"].get("config", {})
         config.update(frame["data"])
-        agent = await api.update_agent(agent["uuid"], data={"config": config})
+        agent = await api.update_agent(agent["uuid"], meta={"config": config})
         SID_AGENT[sid] = agent
 
         log.info("Agent %s configured: %s", agent["name"], config)
