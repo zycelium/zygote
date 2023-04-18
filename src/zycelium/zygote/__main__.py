@@ -1,3 +1,6 @@
+"""
+Zygote Entry Point.
+"""
 from zycelium.zygote.cli import main
 
 

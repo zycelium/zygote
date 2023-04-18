@@ -1,3 +1,5 @@
+# pyright:  reportGeneralTypeIssues=false
+# pylint: disable=no-member, missing-function-docstring, missing-module-docstring
 from pathlib import Path
 from zycelium import zygote
 
@@ -16,8 +18,8 @@ def test_zygote_config_save_and_load(tmp_path: Path):
 
     assert zygote.config.debug is False
     zygote.config.debug = True
-    zygote.config.save(temp_config_path)  # type: ignore
+    zygote.config.save(temp_config_path)
     assert temp_config_path.exists()
 
-    zygote.config.load(temp_config_path)  # type: ignore
+    zygote.config.load(temp_config_path)
     assert zygote.config.debug is True

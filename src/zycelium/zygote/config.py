@@ -1,11 +1,15 @@
-import configobj
+"""
+Zygote Configuration.
+"""
 from pathlib import Path
+
+import configobj
 from click import get_app_dir
 
 from zycelium.dataconfig import dataconfig as _dataconfig
 
-app_dir_path = Path(get_app_dir("zygote"))
-app_config_file = "zygote.conf"
+app_dir_path = Path(get_app_dir("zygote"))  # pylint: disable=invalid-name
+app_config_file = "zygote.conf"  # pylint: disable=invalid-name
 app_config_lookup_paths = [".", str(app_dir_path), "/usr/local/etc"]
 
 
