@@ -343,3 +343,17 @@ async def http_file(uuid):
     if request.headers.get("Accept") == "application/json":
         return jsonify(file)
     return await render_template("file.html", file=file)
+
+
+@app.route("/files/<uuid>/delete", methods=["POST"])
+async def http_file_delete(uuid):
+    """File delete route."""
+    await api.delete_file(uuid)
+    return redirect("/files")
+
+
+@app.route("/files/<uuid>/download")
+async def http_file_download(uuid):
+    """File download route."""
+    file = await api.get_file(uuid)
+    return redirect(file_store.url(file["name"]))
