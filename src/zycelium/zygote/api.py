@@ -29,12 +29,21 @@ class ZygoteAPI:
     async def start(self, db_url: str):
         """Initialize database."""
         self.logger.info("Initializing database")
-        await init_db(db_url)
+        try:
+            await init_db(db_url)
+        except Exception as exc:
+            self.logger.error("Database initialization failed: %s", exc)
+            raise exc
+        else:
+            self.logger.info("Database initialized")
 
     async def stop(self):
         """Stop."""
         self.logger.info("Stopping")
-        await Tortoise.close_connections()
+        try:
+            await Tortoise.close_connections()
+        except Exception as exc:
+            self.logger.warning("Error while stopping %s", exc)
 
     async def create_space(
         self, name: str, data: Optional[dict] = None, meta: Optional[dict] = None
@@ -448,12 +457,16 @@ class ZygoteAPI:
         """Get frames."""
         self.logger.info("Getting frames")
         try:
-            frames = await Frame.all().prefetch_related(
-                "agent",
-                Prefetch("agent", queryset=Agent.all()),
-                "spaces",
-                Prefetch("spaces", queryset=Space.all()),
-            ).limit(100)
+            frames = (
+                await Frame.all()
+                .prefetch_related(
+                    "agent",
+                    Prefetch("agent", queryset=Agent.all()),
+                    "spaces",
+                    Prefetch("spaces", queryset=Space.all()),
+                )
+                .limit(100)
+            )
             frames_list = []
             for frame in frames:
                 spaces_list = [
@@ -748,5 +761,6 @@ class ZygoteAPI:
         except Exception as exc:  # pylint: disable=broad-except
             self.logger.error("Failed to delete file", exc_info=exc)
             return {"success": False}
+
 
 api = ZygoteAPI()
