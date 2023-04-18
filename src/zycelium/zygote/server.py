@@ -42,7 +42,7 @@ app = Quart(__name__)
 app.secret_key = secret_key(app_dir / "secret_key")
 app.config["UPLOADS_DEFAULT_DEST"] = app_files_path
 
-file_store = UploadSet("files", ALL)
+file_store = UploadSet("files", ALL)  # type: ignore
 configure_uploads(app, file_store)
 
 quart_auth = AuthManager(app)
