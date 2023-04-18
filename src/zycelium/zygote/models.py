@@ -1,8 +1,6 @@
 """
 Zygote Models.
 """
-from typing import Optional
-
 from tortoise import Tortoise, fields
 from tortoise.models import Model
 from tortoise.exceptions import DoesNotExist  # pylint: disable=unused-import
