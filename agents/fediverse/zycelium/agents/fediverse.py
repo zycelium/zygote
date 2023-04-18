@@ -65,6 +65,7 @@ async def get_bookmarks():
     bookmarks = mastodon.bookmarks(limit=10)
 
     for bookmark in bookmarks:
+        log.info("Got bookmark %s", bookmark.id)
         if bookmark.id != agent.config.last_seen_id:
             await agent.config_update(last_seen_id=bookmark.id)
         else:
