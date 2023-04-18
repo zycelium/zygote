@@ -19,20 +19,25 @@ def test_frame_defaults():
 
 def test_frame_full():
     uuid = uuid4()
-    now = datetime.now().isoformat()
+    now = datetime.now()
     frame = Frame(kind="event", name="test", data={"hello": "world"}, meta={"test":"this"}, time=now, uuid=uuid)
     assert frame.name == "test"
     assert frame.kind == "event"
     assert frame.data == {"hello": "world"}
     assert frame.meta == {"test": "this"}
-    assert frame.time.isoformat() == now
+    assert frame.time == now
     assert frame.uuid == uuid
 
 
 def test_frame_to_and_from_json():
+    now = datetime.utcnow()
+    uuid = uuid4()
+
     frame_dict = {
         "kind": "event",
         "name": "test",
+        "time": now.isoformat(),
+        "uuid": str(uuid),
     }
     frame_json = json.dumps(frame_dict)
     frame = Frame(**frame_dict)
@@ -41,4 +46,6 @@ def test_frame_to_and_from_json():
     frame2 = Frame.from_json(frame_json)
     assert frame2.kind == "event"
     assert frame2.name == "test"
+    assert frame2.time == now
+    assert frame2.uuid == uuid
     

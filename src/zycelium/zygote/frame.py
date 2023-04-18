@@ -20,7 +20,12 @@ class Frame(BaseModel):
         return {k:v for k, v in self.dict().items() if v}
 
     def to_json(self) -> str:
-        return json.dumps(self.to_dict())
+        frame_dict = self.to_dict()
+        if frame_dict.get("time", None):
+            frame_dict["time"] = frame_dict["time"].isoformat()
+        if frame_dict.get("uuid", None):
+            frame_dict["uuid"] = str(frame_dict["uuid"])
+        return json.dumps(frame_dict)
 
     @classmethod
     def from_json(cls, frame_json) -> "Frame":
