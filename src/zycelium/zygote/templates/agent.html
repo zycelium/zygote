@@ -74,11 +74,15 @@
 <ul>
     {% for token in tokens %}
     <li>
+        <form class="inline">
+            <label for="token">Token</label>
+            <input class="inline token" type="text" value="{{ token.token }}" readonly>
+        </form>
+
         <form class="inline" action="{{ url_for('http_agent_delete_auth_token', uuid=agent.uuid, token_uuid=token.uuid) }}" method="post">
             <input type="hidden" name="token" value="{{ token }}">
             <input class="inline" type="submit" value="Delete">
         </form>
-        {{ token }}
     </li>
     {% endfor %}
 </ul>
