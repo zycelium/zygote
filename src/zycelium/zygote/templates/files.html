@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Zygote - Files{% endblock %}
+
+{% block content %}
+<details>
+    <summary>
+        Create File
+    </summary>
+    <form action="{{ url_for('http_files') }}"" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="redirect_url" value="{{ url_for('http_files') }}">
+        <span class="form-field">
+            <label for="data">File</label>
+            <input type="file" name="file" id="file" placeholder="file">
+        </span>
+        <span class="form-buttons">
+            <input type="submit" value="Create">
+            <input type="reset" value="Cancel">
+        </span>
+    </form>
+    <hr />    
+</details>
+
+<h2>Files</h2>
+<table>
+    {% for file in files %}
+    <tr>
+        <td><a href="{{ url_for('http_file', uuid=file.uuid) }}">{{file.name}}</a></td>
+        <td><code>{{file.data}}</code></td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

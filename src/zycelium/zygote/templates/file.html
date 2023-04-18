@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Zygote - File{% endblock %}
+
+{% block content %}
+<h1>File</h1>
+<div>UUID: {{ file.uuid }}</div>
+<div>Name: {{ file.name }}</div>
+<div>Path: {{ file.path }}</div>
+<div>Meta: {{ file.meta }}</div>
+<div>Created: {{ file.created_at }}</div>
+<div>Modified: {{ file.modified_at }}</div>
+<div>Size: {{ file.size }}</div>
+{% endblock %}
