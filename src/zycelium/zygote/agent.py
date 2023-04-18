@@ -7,7 +7,9 @@ from typing import Awaitable, Callable, Optional
 import socketio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from socketio.exceptions import ConnectionError as SioConnectionError
+
 from zycelium.dataconfig import dataconfig as config
+from zycelium.zygote.frame import Frame
 from zycelium.zygote.logging import get_logger
 
 
@@ -36,12 +38,13 @@ class Agent:
     def _stop_scheduler(self) -> None:
         self._scheduler.shutdown()
 
-    async def _handle_command(self, data: dict) -> None:
-        """On command."""
-        command = data["name"]
+    async def _handle_command(self, frame_dict: dict) -> None:
+        """Handle command."""
+        frame = Frame.from_dict(frame_dict)
+        command = frame.name
         if command == "identity":
-            agent_name = data["data"]["name"]
-            spaces = data["data"]["spaces"]
+            agent_name = frame.data["name"]
+            spaces = frame.meta.get("spaces", [])
             self.name = agent_name
             self.spaces = {space["name"]: space for space in spaces}
             self.log.info(
@@ -51,7 +54,7 @@ class Agent:
             if self.config is None:
                 self.log.warning("Agent not configured")
                 return
-            self.config.from_dict(data["data"])
+            self.config.from_dict(frame.data)
             self.log.info("Agent configured.")
         else:
             self.log.warning("Unknown command: %s", command)
@@ -100,21 +103,14 @@ class Agent:
     async def emit(self, name: str, data: Optional[dict] = None) -> None:
         """Emit event."""
         kind = "event"
-        frame = {
-            "kind": kind,
-            "name": name,
-            "data": data or {},
-        }
-        await self.sio.emit(f"{kind}-{name}", frame, namespace="/")
+        frame = Frame(name=name, kind=kind, data=data or {})
+        await self.sio.emit(f"{kind}-{name}", frame.to_dict(), namespace="/")
 
     async def command(self, name: str, data: Optional[dict] = None) -> None:
+        """Send command."""
         kind = "command"
-        frame = {
-            "kind": kind,
-            "name": name,
-            "data": data,
-        }
-        await self.sio.emit(f"{kind}-{name}", frame, namespace="/")
+        frame = Frame(name=name, kind=kind, data=data or {})
+        await self.sio.emit(f"{kind}-{name}", frame.to_dict(), namespace="/")
 
     async def config_update(self, **data) -> None:
         """Update config."""

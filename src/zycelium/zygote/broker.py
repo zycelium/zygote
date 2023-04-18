@@ -5,6 +5,7 @@ import socketio
 
 from zycelium.zygote.api import api
 from zycelium.zygote.config import app_config
+from zycelium.zygote.frame import Frame
 from zycelium.zygote.logging import get_logger
 
 sio = socketio.AsyncServer(
@@ -43,14 +44,12 @@ async def connect(sid, _environ, auth: dict):
         log.info("Agent %s joined space %s", agent["name"], space["name"])
 
     # Send command: identity
-    await sio.emit(
-        "command",
-        {
-            "name": "identity",
-            "data": {"name": agent["name"], "spaces": agent["spaces"]},
-        },
-        room=sid,
+    frame = Frame(
+        "identity",
+        kind="command",
+        data={"name": agent["name"], "spaces": agent["spaces"]},
     )
+    await sio.emit("command", frame.to_dict(), room=sid)
 
 
 @sio.on("disconnect", namespace="/")
@@ -68,75 +67,62 @@ async def on_command_identity(sid, data):
     log.info("Agent %s sent command: %s", agent["name"], data["name"])
 
     if data["name"] == "identity":
-        await sio.emit(
-            "command",
-            {
-                "name": "identity",
-                "data": {"name": agent["name"], "spaces": agent["spaces"]},
-            },
-            room=sid,
+        frame = Frame(
+            "identity",
+            kind="command",
+            data={"name": agent["name"]},
+            meta={"spaces": agent["spaces"]},
         )
+        await sio.emit("command", frame.to_dict(), room=sid)
     else:
         log.warning("Unknown command: %s", data["name"])
 
 
 @sio.on("command-config", namespace="/")
-async def on_command_config(sid, frame):
+async def on_command_config(sid, data):
     """On command config."""
     agent = SID_AGENT[sid]
-    if frame["name"] == "config":
+    if data["name"] == "config":
         agent = await api.get_agent(agent["uuid"])
         if agent["meta"].get("config"):
             config = agent["meta"]["config"]
-            frame["data"] = {**frame["data"], **config}
+            data["data"] = {**data["data"], **config}
 
-        agent = await api.update_agent(agent["uuid"], meta={"config": frame["data"]})
+        agent = await api.update_agent(agent["uuid"], meta={"config": data["data"]})
         SID_AGENT[sid] = agent
 
         log.info("Agent %s configured.", agent["name"])
-        await sio.emit(
-            "command",
-            {
-                "name": "config",
-                "data": frame["data"],
-            },
-            room=sid,
-        )
+        frame = Frame("config", kind="command", data=data["data"])
+        await sio.emit("command", frame.to_dict(), room=sid)
     else:
-        log.warning("Unknown command: %s", frame["name"])
+        log.warning("Unknown command: %s", data["name"])
 
 
 @sio.on("command-config-update", namespace="/")
-async def on_command_config_update(sid, frame):
+async def on_command_config_update(sid, data):
     """On command config update."""
     agent = SID_AGENT[sid]
-    log.info("Agent %s sent command: %s", agent["name"], frame["name"])
+    log.info("Agent %s sent command: %s", agent["name"], data["name"])
 
-    if frame["name"] == "config-update":
+    if data["name"] == "config-update":
         agent = await api.get_agent(agent["uuid"])
         config = agent["meta"].get("config", {})
-        config.update(frame["data"])
+        config.update(data["data"])
         agent = await api.update_agent(agent["uuid"], meta={"config": config})
         SID_AGENT[sid] = agent
 
         log.info("Agent %s configured: %s", agent["name"], config)
-        await sio.emit(
-            "command",
-            {
-                "name": "config",
-                "data": config,
-            },
-            room=sid,
-        )
+        frame = Frame("config", kind="command", data=config)
+        await sio.emit("command", frame.to_dict(), room=sid)
     else:
-        log.warning("Unknown command: %s", frame["name"])
+        log.warning("Unknown command: %s", data["name"])
 
 
 @sio.on("*", namespace="/")
-async def on_frame(event, sid, frame):
+async def on_frame(event, sid, data):
     """On frame."""
     agent = SID_AGENT[sid]
-    spaces = frame.pop("spaces", [])
+    spaces = data.pop("spaces", [])
     if not spaces:
         # Use all joined spaces if spaces not specified
         spaces = [s["uuid"] for s in agent["spaces"]]
@@ -144,9 +130,9 @@ async def on_frame(event, sid, frame):
         # Filter spaces by name
         spaces = [s["uuid"] for s in agent["spaces"] if s["name"] in spaces]
 
-    frame_name = frame["name"]
-    kind = frame["kind"]
-    frame["meta"] = {
+    frame_name = data["name"]
+    kind = data["kind"]
+    data["meta"] = {
         "agent": agent["name"],
     }
     if not frame_name:
@@ -156,14 +142,15 @@ async def on_frame(event, sid, frame):
     await api.create_frame(
         kind=kind,
         name=frame_name,
-        data=frame["data"],
+        data=data["data"],
         space_uuids=spaces,
         agent_uuid=agent["uuid"],
     )
 
     # Broadcast frame to spaces
+    frame = Frame(frame_name, kind=kind, data=data["data"])
     for space in spaces:
-        await sio.emit(event, frame, room=space)
+        await sio.emit(event, frame.to_dict(), room=space)
 
     log.info(
         "Agent %s sent frame %s to spaces: %s",
