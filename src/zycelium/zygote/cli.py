@@ -113,7 +113,7 @@ def peer_list():
             return
 
         click.echo("Peers:")
-        for peer in peers:
+        for peer in peers:  # pylint: disable=redefined-outer-name
             click.echo(f"{peer.name} {peer.base_url}")
         await zygote.models.stop_database()
 
@@ -129,7 +129,7 @@ def peer_remove(name):
     async def _remove():
         await zygote.models.start_database(zygote.config.database_url)
         try:
-            peer = await zygote.models.Peer.get(name=name)
+            peer = await zygote.models.Peer.get(name=name)  # pylint: disable=redefined-outer-name
             await peer.delete()
         except zygote.models.DoesNotExist:
             click.echo(f"Peer not found: {name}")
