@@ -43,7 +43,7 @@ def serve(host, port, tls, debug):
         )
     else:
         uvicorn.run(
-            "zycelium.zygote.server:app", host=host, port=port, log_level=log_level
+            "zycelium.zygote.server:sio_app", host=host, port=port, log_level=log_level
         )
 
 
