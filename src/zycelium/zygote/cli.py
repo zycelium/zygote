@@ -38,6 +38,14 @@ def version():
     click.echo(f"Zycelium/Zygote version {zygote.version}")
 
 
+@main.command()
+@click.option("--debug", is_flag=True, help="Enable extra logging.")
+@zygote.config.click_option()  # pylint: disable=no-member # type: ignore
+def serve(debug: bool):
+    """Run Zygote instance."""
+    click.echo(f"Debug is {debug}.")
+
+
 @main.group()
 def config():
     """Manage config."""
@@ -69,11 +77,3 @@ def config_reset(obj, yes):
         )
     else:
         click.echo("Config was not modified.")
-
-
-@main.command()
-@click.option("--debug", is_flag=True, help="Enable extra logging.")
-@zygote.config.click_option()  # pylint: disable=no-member # type: ignore
-def serve(debug: bool):
-    """Run Zygote instance."""
-    click.echo(f"Debug is {debug}.")
