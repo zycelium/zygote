@@ -20,6 +20,9 @@ class Config:
     debug: bool = False
     database_url: str = f"sqlite:///{app_dir_path}/zygote.db"
 
+    http_host: str = "localhost"
+    http_port: int = 3965
+
     instance_name: str = "Zygote"
     instance_description: str = "Personal Automation Framework"
     instance_base_url: str = "https://localhost:3965"
