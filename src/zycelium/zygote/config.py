@@ -1,3 +1,6 @@
+"""
+Zygote config.
+"""
 from zycelium.dataconfig import dataconfig
 
 

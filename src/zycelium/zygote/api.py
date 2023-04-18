@@ -44,9 +44,7 @@ class ZygoteAPI:
         data = data or {}
         meta = meta or {}
         try:
-            space_obj = await Space.create(
-                name=name, data=data, meta=meta
-            )
+            space_obj = await Space.create(name=name, data=data, meta=meta)
             space_dict = {
                 "uuid": str(space_obj.uuid),
                 "name": space_obj.name,
@@ -129,7 +127,7 @@ class ZygoteAPI:
             }
             return space_dict
         except Exception as exc:  # pylint: disable=broad-except
-            self.logger.error("Failed to update space: %s", space_uuid , exc_info=exc)
+            self.logger.error("Failed to update space: %s", space_uuid, exc_info=exc)
             return {"success": False}
 
     async def delete_space(self, space_uuid: int) -> dict:
@@ -151,9 +149,7 @@ class ZygoteAPI:
         data = data or {}
         meta = meta or {}
         try:
-            agent_obj = await Agent.create(
-                name=name, data=data, meta=meta
-            )
+            agent_obj = await Agent.create(name=name, data=data, meta=meta)
             agent_dict = {
                 "uuid": str(agent_obj.uuid),
                 "name": agent_obj.name,
@@ -389,9 +385,7 @@ class ZygoteAPI:
         meta = meta or {}
         space_uuids = space_uuids or []
         try:
-            frame_obj = await Frame.create(
-                kind=kind, name=name, data=data, meta=meta
-            )
+            frame_obj = await Frame.create(kind=kind, name=name, data=data, meta=meta)
             if agent_uuid:
                 agent_obj = await Agent.get(uuid=agent_uuid)
                 frame_obj.agent = agent_obj  # type: ignore
@@ -727,7 +721,7 @@ class ZygoteAPI:
         except Exception as exc:  # pylint: disable=broad-except
             self.logger.error("Failed to get file by name", exc_info=exc)
             return {"success": False}
-        
+
     async def create_file(self, name: str, path: str, meta: dict) -> dict:
         """Create file."""
         self.logger.info("Creating file")
@@ -743,5 +737,6 @@ class ZygoteAPI:
         except Exception as exc:  # pylint: disable=broad-except
             self.logger.error("Failed to create file", exc_info=exc)
             return {"success": False}
+
 
 api = ZygoteAPI()

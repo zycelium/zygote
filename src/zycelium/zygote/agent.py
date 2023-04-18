@@ -60,7 +60,7 @@ class Agent:
         """Configure agent."""
         if self.config is None:
             return
-            
+
         await self.command("config", self.config.to_dict())
 
     async def run(self, url: str, auth: dict) -> None:
@@ -121,7 +121,7 @@ class Agent:
         if self.config is None:
             self.log.warning("Agent not configured")
             return
-            
+
         await self.command("config-update", data)
 
     def on_startup(self, delay: float = 0.0):

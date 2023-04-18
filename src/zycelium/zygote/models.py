@@ -86,7 +86,6 @@ class Agent(Model):
         ordering = ["name"]
 
 
-
 class AuthToken(Model):
     """AuthToken model"""
 
