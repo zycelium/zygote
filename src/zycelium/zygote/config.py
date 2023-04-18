@@ -1,22 +1,39 @@
-"""
-Zygote config.
-"""
-from zycelium.dataconfig import dataconfig
+import configobj
+from pathlib import Path
+from click import get_app_dir
+
+from zycelium.dataconfig import dataconfig as _dataconfig
+
+app_dir_path = Path(get_app_dir("zygote"))
+app_config_file = "zygote.conf"
+app_config_lookup_paths = [".", str(app_dir_path), "/usr/local/etc"]
 
 
-@dataconfig
-class AppConfig:
-    """App config."""
+@_dataconfig(file=app_config_file, paths=app_config_lookup_paths)
+class Config:
+    """Zygote Configuration"""
 
-    host: str = "localhost"
-    port: int = 3965
+    debug: bool = False
 
-    log_level: str = "info"
+    @property
+    def app_dir(self):
+        """OS-specific directory to store app data."""
+        return app_dir_path
 
-    tls_enable: bool = True
-    tls_ca_path: str = "ca.pem"
-    tls_cert_path: str = "cert.pem"
-    tls_key_path: str = "key.pem"
+    @property
+    def app_config(self):
+        """Filename for app config."""
+        return app_config_file
+
+    @property
+    def app_config_path(self):
+        """Full path to app config within lookup paths. If none exists, app_dir/app_config."""
+        for lookup_path in app_config_lookup_paths:
+            potential_config_path = Path(lookup_path) / app_config_file
+            if potential_config_path.exists():
+                return potential_config_path
+        return app_dir_path / app_config_file
 
 
-app_config = AppConfig()
+config = Config()
+ConfigParseError = configobj.UnreprError

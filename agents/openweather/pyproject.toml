@@ -1,8 +1,0 @@
-[project]
-name = "zycelium.agents.openweather"
-version = "0.1.0"
-dependencies = ["sunnyside"]
-
-
-[project.entry-points."zycelium.agents"]
-openweather = "openweather"
