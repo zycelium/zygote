@@ -8,6 +8,7 @@ from zycelium.zygote.config import (
 )
 from zycelium.zygote import logging
 from zycelium.zygote import models
+from zycelium.zygote import signals
 
 __version__ = "0.1.0"
 
@@ -20,5 +21,6 @@ __all__ = [
     "config",
     "logging",
     "models",
+    "signals",
     "version",
 ]
