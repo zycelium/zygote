@@ -3,10 +3,16 @@ Frame broker.
 """
 import socketio
 
-from zycelium.zygote.logging import get_logger
 from zycelium.zygote.api import api
+from zycelium.zygote.config import app_config
+from zycelium.zygote.logging import get_logger
 
-sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*", logger=True, engineio_logger=True)
+sio = socketio.AsyncServer(
+    async_mode="asgi",
+    cors_allowed_origins="*",
+    logger=app_config.log_level == "debug",
+    engineio_logger=app_config.log_level == "debug",
+)
 log = get_logger("zygote.broker")
 SID_AGENT = {}
 
