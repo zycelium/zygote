@@ -9,6 +9,7 @@ from click import get_app_dir
 from quart import (
     Quart,
     ResponseReturnValue,
+    jsonify,
     request,
     render_template,
     redirect,
@@ -24,6 +25,7 @@ from quart_auth import (
     current_user,
 )
 from quart_cors import cors
+from quart_uploads import configure_uploads, UploadSet, ALL, UploadNotAllowed
 
 from zycelium.zygote.api import api
 from zycelium.zygote.broker import sio
@@ -34,9 +36,14 @@ from zycelium.zygote.utils import secret_key, py_string_to_dict
 
 app_dir = Path(get_app_dir("zygote"))
 app_db_path = app_dir / "zygote.db"
+app_files_path = app_dir / "files"
 
 app = Quart(__name__)
 app.secret_key = secret_key(app_dir / "secret_key")
+app.config["UPLOADS_DEFAULT_DEST"] = app_files_path
+
+file_store = UploadSet("files", ALL)
+configure_uploads(app, file_store)
 
 quart_auth = AuthManager(app)
 app = cors(app, allow_origin="*")
@@ -283,3 +290,43 @@ async def http_agent_delete_auth_token(uuid, token_uuid):
     """Agent delete auth token route."""
     await api.delete_auth_token(token_uuid)
     return redirect(f"/agents/{uuid}")
+
+
+@app.route("/files", methods=["GET", "POST"])
+async def http_files():
+    """Files route."""
+    try:
+        if request.method == "POST":
+            files = await request.files
+            form = await request.form
+            log.info("Form: %s", form)
+            log.info("Files: %s", files)
+            file = files["file"]
+            name = file.filename
+            try:
+                path = await file_store.save(file)
+            except UploadNotAllowed as exc:
+                return await render_template("files.html", error=str(exc))
+
+            await api.create_file(name=name, path=path, meta={
+                "content_type": file.content_type,
+                "content_length": file.content_length,
+            })
+            return redirect("/files")
+
+        files = (await api.get_files())["files"]
+        if request.headers.get("Accept") == "application/json":
+            return jsonify(files)
+        return await render_template("files.html", files=files)
+    except Exception as exc:  # pylint: disable=broad-except
+        log.exception(exc)
+        return await render_template("files.html", error=str(exc))
+
+
+@app.route("/files/<uuid>")
+async def http_file(uuid):
+    """File route."""
+    file = await api.get_file(uuid)
+    if request.headers.get("Accept") == "application/json":
+        return jsonify(file)
+    return await render_template("file.html", file=file)
