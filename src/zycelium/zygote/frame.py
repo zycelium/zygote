@@ -21,6 +21,10 @@ class Frame:
     def to_dict(self):
         """Return dict representation of frame."""
         return asdict(self)
+    
+    def sio_name(self):
+        """Return sio name."""
+        return f"{self.kind}-{self.name}"
 
     def __str__(self):
         return str(self.to_dict())

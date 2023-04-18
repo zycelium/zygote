@@ -119,7 +119,7 @@ async def on_command_config_update(sid, data):
 
 
 @sio.on("*", namespace="/")
-async def on_frame(event, sid, data):
+async def on_frame(_event, sid, data):
     """On frame."""
     agent = SID_AGENT[sid]
     spaces = data.pop("spaces", [])
@@ -150,11 +150,11 @@ async def on_frame(event, sid, data):
     # Broadcast frame to spaces
     frame = Frame(frame_name, kind=kind, data=data["data"])
     for space in spaces:
-        await sio.emit(event, frame.to_dict(), room=space)
+        await sio.emit(frame.sio_name(), frame.to_dict(), room=space)
 
     log.info(
         "Agent %s sent frame %s to spaces: %s",
         agent["name"],
-        frame_name,
+        frame.sio_name(),
         ", ".join(spaces),
     )

@@ -104,13 +104,13 @@ class Agent:
         """Emit event."""
         kind = "event"
         frame = Frame(name=name, kind=kind, data=data or {})
-        await self.sio.emit(f"{kind}-{name}", frame.to_dict(), namespace="/")
+        await self.sio.emit(frame.sio_name(), frame.to_dict(), namespace="/")
 
     async def command(self, name: str, data: Optional[dict] = None) -> None:
         """Send command."""
         kind = "command"
         frame = Frame(name=name, kind=kind, data=data or {})
-        await self.sio.emit(f"{kind}-{name}", frame.to_dict(), namespace="/")
+        await self.sio.emit(frame.sio_name(), frame.to_dict(), namespace="/")
 
     async def config_update(self, **data) -> None:
         """Update config."""
