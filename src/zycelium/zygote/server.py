@@ -33,8 +33,6 @@ from zycelium.zygote.supervisor import Supervisor
 from zycelium.zygote.utils import secret_key, py_string_to_dict
 
 app_dir = Path(get_app_dir("zygote"))
-app_tls_cert_path = app_dir / "cert.pem"
-app_tls_key_path = app_dir / "key.pem"
 app_db_path = app_dir / "zygote.db"
 
 app = Quart(__name__)

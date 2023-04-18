@@ -1,46 +1,42 @@
 """
 Cryptographic utilities.
 """
+from datetime import datetime, timedelta
+from collections import namedtuple
 from pathlib import Path
-from OpenSSL import crypto
+
+import trustme
 
 
-def generate_self_signed_certificate(
-    certificate_path: Path, key_path: Path, valid_years: int
-) -> None:
+CertificatePaths = namedtuple("CertificatePaths", ["ca", "key", "cert"])
+
+
+def ensure_tls_certificate_chain(
+    domain_name: str, app_dir: Path, valid_days: int
+) -> CertificatePaths:
     """
-    Generate a self-signed certificate and private key.
+    Ensure that a TLS certificate chain exists for the given domain name.
+
+    If the certificate chain does not exist, it will be created.
     """
-    # Create a key pair
-    k = crypto.PKey()
-    k.generate_key(crypto.TYPE_RSA, 4096)
 
-    # Create a self-signed certificate
-    certificate = crypto.X509()
-    certificate.get_subject().C = "NA"
-    certificate.get_subject().ST = "local"
-    certificate.get_subject().L = "local"
-    certificate.get_subject().O = "Zycelium"
-    certificate.get_subject().OU = "Zygote"
-    certificate.get_subject().CN = "localhost"
-    certificate.add_extensions(
-        [
-            crypto.X509Extension(
-                b"subjectAltName", False, b"DNS:localhost, DNS:zygote.local"
-            )
-        ]
-    )
-    certificate.set_serial_number(1000)
-    certificate.gmtime_adj_notBefore(0)
-    certificate.gmtime_adj_notAfter(valid_years * 365 * 24 * 60 * 60)
-    certificate.set_issuer(certificate.get_subject())
-    certificate.set_pubkey(k)
-    certificate.sign(k, "sha512")
+    app_tls_ca_path = app_dir / "ca.pem"
+    app_tls_key_path = app_dir / "key.pem"
+    app_tls_cert_path = app_dir / "cert.pem"
+    not_after = datetime.utcnow() + timedelta(days=valid_days)
 
-    # Save certificate and private key
-    with open(certificate_path, "wt", encoding="utf-8") as certificate_file:
-        certificate_file.write(
-            crypto.dump_certificate(crypto.FILETYPE_PEM, certificate).decode("utf-8")
+    if (
+        not app_tls_ca_path.exists()
+        or not app_tls_key_path.exists()
+        or not app_tls_cert_path.exists()
+    ):
+        ca = trustme.CA(organization_name="Zycelium", organization_unit_name="Zygote")
+        server_cert = ca.issue_cert(
+            domain_name, common_name=domain_name, not_after=not_after
         )
-    with open(key_path, "wt", encoding="utf-8") as key_file:
-        key_file.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8"))
+
+        ca.cert_pem.write_to_path(str(app_tls_ca_path))
+        server_cert.private_key_and_cert_chain_pem.write_to_path(str(app_tls_key_path))
+        server_cert.cert_chain_pems[0].write_to_path(str(app_tls_cert_path))
+
+    return CertificatePaths(app_tls_ca_path, app_tls_key_path, app_tls_cert_path)
