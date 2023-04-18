@@ -52,7 +52,7 @@ class Agent:
                 self.log.warning("Agent not configured")
                 return
             self.config.from_dict(data["data"])
-            self.log.info("Agent configured: %s", data["data"])
+            self.log.info("Agent configured.")
         else:
             self.log.warning("Unknown command: %s", command)
 

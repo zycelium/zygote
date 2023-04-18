@@ -78,8 +78,6 @@ async def on_command_identity(sid, data):
 async def on_command_config(sid, frame):
     """On command config."""
     agent = SID_AGENT[sid]
-    log.info("Agent %s sent command: %s", agent["name"], frame["name"])
-
     if frame["name"] == "config":
         agent = await api.get_agent(agent["uuid"])
         if agent["data"].get("config"):
@@ -89,7 +87,7 @@ async def on_command_config(sid, frame):
         agent = await api.update_agent(agent["uuid"], data={"config": frame["data"]})
         SID_AGENT[sid] = agent
 
-        log.info("Agent %s configured: %s", agent["name"], frame["data"])
+        log.info("Agent %s configured.", agent["name"])
         await sio.emit(
             "command",
             {
