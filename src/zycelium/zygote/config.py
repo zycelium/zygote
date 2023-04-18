@@ -14,7 +14,7 @@ app_config_lookup_paths = [".", str(app_dir_path), "/usr/local/etc"]
 
 
 @dataconfig(file=app_config_file, paths=app_config_lookup_paths)
-class Config:
+class DefaultConfig:
     """Zygote Configuration"""
 
     debug: bool = False
@@ -48,5 +48,5 @@ class Config:
         return app_dir_path / app_config_file
 
 
-config = Config()
+config = DefaultConfig()
 ConfigParseError = configobj.UnreprError

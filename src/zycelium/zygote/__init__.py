@@ -3,7 +3,7 @@ Zygote.
 """
 from zycelium.zygote.config import (
     config,
-    Config as DefaultConfig,
+    DefaultConfig,
     ConfigParseError,
 )
 from zycelium.zygote import logging
