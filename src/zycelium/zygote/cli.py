@@ -1,21 +1,35 @@
 """
 Zygote CLI
 """
+from pathlib import Path
+
 import click
 
 from zycelium import zygote
 
 
 @click.group()
-def main():
+@click.option("--conf", "-c", type=click.Path(exists=True), help="Path to config file.")
+@click.pass_context
+def main(ctx, conf):
     """Zycelium/Zygote: Personal Automation Framework"""
-    if zygote.config.app_config_path.exists():
+    ctx.ensure_object(dict)
+    ctx.obj["conf"] = Path(conf) if conf else None
+    if conf:
         try:
-            zygote.config.load(  # pylint: disable=no-member # type: ignore
-                zygote.config.app_config_path
-            )
+            zygote.config.load(conf)  # pylint: disable=no-member # type: ignore
         except zygote.ConfigParseError:
-            click.echo(f"Error reading config file at: {zygote.config.app_config_path}")
+            click.echo(f"Error reading config file at: {conf}")
+    else:
+        if zygote.config.app_config_path.exists():
+            try:
+                zygote.config.load(  # pylint: disable=no-member # type: ignore
+                    zygote.config.app_config_path
+                )
+            except zygote.ConfigParseError:
+                click.echo(
+                    f"Error reading config file at: {zygote.config.app_config_path}"
+                )
 
 
 @main.command()
@@ -24,22 +38,37 @@ def version():
     click.echo(f"Zycelium/Zygote version {zygote.version}")
 
 
-@main.command()
-@click.option("--reset", is_flag=True, default=False, help="Reset config to defaults.")
-def config(reset):
+@main.group()
+def config():
+    """Manage config."""
+
+
+@config.command("edit")
+@click.pass_obj
+def config_edit(obj):
     """Edit config."""
-    if reset:
+    conf = obj["conf"] or zygote.config.app_config_path
+    if not conf.exists():
+        zygote.config.save(conf)  # pylint: disable=no-member # type: ignore
+    click.edit(filename=str(conf))
+
+
+@config.command("reset")
+@click.option(
+    "--yes", "-y", is_flag=True, default=False, help="Accept reset confirmation prompt."
+)
+@click.pass_obj
+def config_reset(obj, yes):
+    """Reset config to defaults."""
+    conf = obj["conf"] or zygote.config.app_config_path
+    click.echo(f"Reset config: {conf}")
+    if yes or click.confirm("Are you sure you want to reset config to defaults?"):
         default_config = zygote.DefaultConfig()
         default_config.save(  # pylint: disable=no-member # type: ignore
-            zygote.config.app_config_path, overwrite=True
+            conf, overwrite=True
         )
-
-    if not zygote.config.app_config_path.exists():
-        zygote.config.save(  # pylint: disable=no-member # type: ignore
-            zygote.config.app_config_path
-        )
-
-    click.edit(filename=str(zygote.config.app_config_path))
+    else:
+        click.echo("Config was not modified.")
 
 
 @main.command()

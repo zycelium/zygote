@@ -6,18 +6,24 @@ from pathlib import Path
 import configobj
 from click import get_app_dir
 
-from zycelium.dataconfig import dataconfig as _dataconfig
+from zycelium.dataconfig import dataconfig
 
 app_dir_path = Path(get_app_dir("zygote"))  # pylint: disable=invalid-name
 app_config_file = "zygote.conf"  # pylint: disable=invalid-name
 app_config_lookup_paths = [".", str(app_dir_path), "/usr/local/etc"]
 
 
-@_dataconfig(file=app_config_file, paths=app_config_lookup_paths)
+@dataconfig(file=app_config_file, paths=app_config_lookup_paths)
 class Config:
     """Zygote Configuration"""
 
     debug: bool = False
+    database_url: str = f"sqlite:///{app_dir_path}/zygote.db"
+
+    instance_name: str = "Zygote"
+    instance_description: str = "Personal Automation Framework"
+    instance_base_url: str = "https://localhost:3965"
+    instance_verify_tls: bool = False
 
     @property
     def app_dir(self):
