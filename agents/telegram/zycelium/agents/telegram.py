@@ -81,7 +81,7 @@ async def startup():
         TG.add_handler(MessageHandler(message_handler))
         await TG.start()
         await agent.emit("telegram/started", {"message": "Telegram bot started."})
-        await TG.send_message(int(agent.config.chat_id), "Telegram bot started.")
+        # await TG.send_message(int(agent.config.chat_id), "Telegram bot started.")
     except Exception:  # pylint: disable=broad-except
         await agent.emit("telegram/error", {"message": format_exc()})
 
