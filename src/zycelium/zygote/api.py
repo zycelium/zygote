@@ -453,7 +453,7 @@ class ZygoteAPI:
                 Prefetch("agent", queryset=Agent.all()),
                 "spaces",
                 Prefetch("spaces", queryset=Space.all()),
-            )
+            ).limit(100)
             frames_list = []
             for frame in frames:
                 spaces_list = [
