@@ -8,17 +8,17 @@ from click import get_app_dir
 
 from zycelium.dataconfig import dataconfig
 
-app_dir_path = Path(get_app_dir("zygote"))  # pylint: disable=invalid-name
-app_config_file = "zygote.conf"  # pylint: disable=invalid-name
-app_config_lookup_paths = [".", str(app_dir_path), "/usr/local/etc"]
+APP_DIR_PATH = Path(get_app_dir("zygote"))
+APP_CONFIG_FILE = "zygote.conf"
+APP_CONFIG_LOOKUP_PATHS = [".", str(APP_DIR_PATH), "/usr/local/etc"]
 
 
-@dataconfig(file=app_config_file, paths=app_config_lookup_paths)
+@dataconfig(file=APP_CONFIG_FILE, paths=APP_CONFIG_LOOKUP_PATHS)
 class DefaultConfig:
     """Zygote Configuration"""
 
     debug: bool = False
-    database_url: str = f"sqlite:///{app_dir_path}/zygote.db"
+    database_url: str = f"sqlite:///{APP_DIR_PATH}/zygote.db"
 
     http_host: str = "localhost"
     http_port: int = 3965
@@ -31,21 +31,21 @@ class DefaultConfig:
     @property
     def app_dir(self):
         """OS-specific directory to store app data."""
-        return app_dir_path
+        return APP_DIR_PATH
 
     @property
     def app_config(self):
         """Filename for app config."""
-        return app_config_file
+        return APP_CONFIG_FILE
 
     @property
     def app_config_path(self):
         """Full path to app config within lookup paths. If none exists, app_dir/app_config."""
-        for lookup_path in app_config_lookup_paths:
-            potential_config_path = Path(lookup_path) / app_config_file
+        for lookup_path in APP_CONFIG_LOOKUP_PATHS:
+            potential_config_path = Path(lookup_path) / APP_CONFIG_FILE
             if potential_config_path.exists():
                 return potential_config_path
-        return app_dir_path / app_config_file
+        return APP_DIR_PATH / APP_CONFIG_FILE
 
 
 config = DefaultConfig()
