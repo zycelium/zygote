@@ -14,6 +14,7 @@ from zycelium.zygote.models import (
     Space,
     Agent,
     AuthToken,
+    FileStore,
 )
 
 
@@ -676,5 +677,71 @@ class ZygoteAPI:
             self.logger.error("Failed to get auth tokens for agent", exc_info=exc)
             return {"success": False}
 
+    async def get_file(self, file_uuid: int) -> dict:
+        """Get file."""
+        self.logger.info("Getting file")
+        try:
+            file_obj = await FileStore.get(uuid=file_uuid)
+            file_dict = {
+                "uuid": str(file_obj.uuid),
+                "name": file_obj.name,
+                "path": file_obj.path,
+                "meta": file_obj.meta,
+            }
+            return file_dict
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get file", exc_info=exc)
+            return {"success": False}
+
+    async def get_files(self) -> dict:
+        """Get files."""
+        self.logger.info("Getting files")
+        try:
+            files = await FileStore.all().limit(100)
+            files_list = []
+            for file_obj in files:
+                file_dict = {
+                    "uuid": str(file_obj.uuid),
+                    "name": file_obj.name,
+                    "path": file_obj.path,
+                    "meta": file_obj.meta,
+                }
+                files_list.append(file_dict)
+            return {"files": files_list}
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get files", exc_info=exc)
+            return {"success": False}
+
+    async def get_file_by_name(self, name: str) -> dict:
+        """Get file by name."""
+        self.logger.info("Getting file by name")
+        try:
+            file_obj = await FileStore.get(name=name)
+            file_dict = {
+                "uuid": str(file_obj.uuid),
+                "name": file_obj.name,
+                "path": file_obj.path,
+                "meta": file_obj.meta,
+            }
+            return file_dict
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to get file by name", exc_info=exc)
+            return {"success": False}
+        
+    async def create_file(self, name: str, path: str, meta: dict) -> dict:
+        """Create file."""
+        self.logger.info("Creating file")
+        try:
+            file_obj = await FileStore.create(name=name, path=path, meta=meta)
+            file_dict = {
+                "uuid": str(file_obj.uuid),
+                "name": file_obj.name,
+                "path": file_obj.path,
+                "meta": file_obj.meta,
+            }
+            return file_dict
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error("Failed to create file", exc_info=exc)
+            return {"success": False}
 
 api = ZygoteAPI()
