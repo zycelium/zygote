@@ -29,6 +29,7 @@ from quart_uploads import configure_uploads, UploadSet, ALL, UploadNotAllowed
 
 from zycelium.zygote.api import api
 from zycelium.zygote.broker import sio
+from zycelium.zygote.config import app_config
 from zycelium.zygote.logging import get_logger
 from zycelium.zygote.plugin import discover_agents, start_agent
 from zycelium.zygote.supervisor import Supervisor
@@ -55,10 +56,13 @@ log = get_logger("zygote.server")
 
 # Utils
 
-async def provision_and_start_agent(agent_name: str) -> None:
+
+async def provision_and_start_agent(
+    agent_name: str, host: str, port: int, tls: bool
+) -> None:
     """Start an agent."""
     log.info("Starting agent %s", agent_name)
-    url = "https://localhost:3965"
+    url = f"{'https' if tls else 'http'}://{host}:{port}"
     agent = await api.get_agent_by_name(agent_name.split(".")[-1])
     if agent != {"success": False}:
         tokens = await api.get_auth_tokens_for_agent(agent["uuid"])
@@ -75,9 +79,8 @@ async def provision_and_start_agent(agent_name: str) -> None:
         token = await api.create_auth_token(agent["uuid"])
         auth = {"token": token["token"]}
 
-    await sup.add_process(
-            agent_name, start_agent, agent_name, url=url, auth=auth
-        )
+    await sup.add_process(agent_name, start_agent, agent_name, url=url, auth=auth)
+
 
 # Hooks
 
@@ -86,9 +89,15 @@ async def provision_and_start_agent(agent_name: str) -> None:
 async def before_serving():
     """Startup hook."""
     log.info("Starting server")
+
     await api.start(f"sqlite://{app_db_path}")
     for agent_name in discover_agents():
-        await provision_and_start_agent(agent_name)
+        await provision_and_start_agent(
+            agent_name,
+            host=app_config.host,
+            port=app_config.port,
+            tls=app_config.tls_enable,
+        )
     await sup.start()
 
 
@@ -308,10 +317,14 @@ async def http_files():
             except UploadNotAllowed as exc:
                 return await render_template("files.html", error=str(exc))
 
-            await api.create_file(name=name, path=path, meta={
-                "content_type": file.content_type,
-                "content_length": file.content_length,
-            })
+            await api.create_file(
+                name=name,
+                path=path,
+                meta={
+                    "content_type": file.content_type,
+                    "content_length": file.content_length,
+                },
+            )
             return redirect("/files")
 
         files = (await api.get_files())["files"]
