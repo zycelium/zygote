@@ -6,9 +6,13 @@
 <h1>File</h1>
 <div>UUID: {{ file.uuid }}</div>
 <div>Name: {{ file.name }}</div>
-<div>Path: {{ file.path }}</div>
 <div>Meta: {{ file.meta }}</div>
-<div>Created: {{ file.created_at }}</div>
-<div>Modified: {{ file.modified_at }}</div>
-<div>Size: {{ file.size }}</div>
+
+<p>
+    <a href="{{ url_for('http_file_download', uuid=file.uuid) }}">Download {{ file.name }}</a>
+</p>
+
+<form action="{{ url_for('http_file_delete', uuid=file.uuid) }}" method="post">
+    <input type="submit" value="Delete">
+</form>
 {% endblock %}
