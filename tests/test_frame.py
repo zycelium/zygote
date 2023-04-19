@@ -15,6 +15,7 @@ def test_frame_defaults():
     assert frame.meta is None
     assert frame.time is None
     assert frame.uuid is None
+    assert frame.reply_to is None
 
 
 def test_frame_full():
@@ -34,6 +35,7 @@ def test_frame_full():
     assert frame.meta == {"test": "this"}
     assert frame.time == now
     assert frame.uuid == uuid
+    assert frame.reply_to is None
 
 
 def test_frame_to_and_from_json():
@@ -72,7 +74,7 @@ def test_frame_reply():
     assert reply.time is None
     assert reply.uuid is None
 
-    reply2 = frame.reply(name="test", data={"test": "this"})
+    reply2 = frame.reply(data={"test": "this"})
     assert reply2.kind == "event"
     assert reply2.name == "test"
     assert reply2.data == {"test": "this"}
