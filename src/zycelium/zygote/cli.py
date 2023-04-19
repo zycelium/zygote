@@ -144,9 +144,9 @@ def peer_remove(name):
     async def _remove():
         await zygote.models.start_database(zygote.config.database_url)
         try:
-            peer = await zygote.models.Peer.get(
+            peer = await zygote.models.Peer.get(  # pylint: disable=redefined-outer-name
                 name=name
-            )  # pylint: disable=redefined-outer-name
+            )
             await peer.delete()
         except zygote.models.DoesNotExist:
             click.echo(f"Peer not found: {name}")
