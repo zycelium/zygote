@@ -52,6 +52,21 @@ def config():
     """Manage config."""
 
 
+@config.command("password")
+@click.option("--current-password", prompt=True, hide_input=True)
+@click.option("--new-password", prompt=True, hide_input=True)
+def config_password(current_password, new_password):
+    """Change config password."""
+    if zygote.config.check_password(current_password):
+        zygote.config.change_password(new_password)
+        zygote.config.save(  # pylint: disable=no-member # type: ignore
+            zygote.config.app_config_path, overwrite=True
+        )
+        click.echo("Admin password updated.")
+    else:
+        click.echo("Incorrect password.")
+
+
 @config.command("edit")
 @click.pass_obj
 def config_edit(obj):
@@ -129,7 +144,9 @@ def peer_remove(name):
     async def _remove():
         await zygote.models.start_database(zygote.config.database_url)
         try:
-            peer = await zygote.models.Peer.get(name=name)  # pylint: disable=redefined-outer-name
+            peer = await zygote.models.Peer.get(
+                name=name
+            )  # pylint: disable=redefined-outer-name
             await peer.delete()
         except zygote.models.DoesNotExist:
             click.echo(f"Peer not found: {name}")
