@@ -37,8 +37,30 @@ class Frame(BaseModel):
         """Convert a Frame to a dict."""
         return self.dict(exclude_unset=True)
 
-    def reply(self, **kwargs) -> "Frame":
-        """Create a reply Frame."""
+    def reply(
+        self,
+        kind: Optional[str] = None,
+        name: Optional[str] = None,
+        data: Optional[dict] = None,
+        meta: Optional[dict] = None,
+        time: Optional[datetime] = None,
+        uuid: Optional[UUID] = None,
+    ) -> "Frame":
+        """
+        Create a reply Frame.
+
+        Reply is a shortcut to link frames together
+        to track the cause for current frame being sent.
+
+        """
+        kwargs = {
+            "kind": kind,
+            "name": name,
+            "data": data,
+            "meta": meta,
+            "time": time,
+            "uuid": uuid,
+        }
         original = {k: v for k, v in self.dict().items() if k not in ["time", "uuid"]}
         kwargs = {**original, **kwargs}
         kwargs["reply_to"] = self.uuid
