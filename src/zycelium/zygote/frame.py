@@ -51,7 +51,6 @@ class Frame(BaseModel):
 
         Reply is a shortcut to link frames together
         to track the cause for current frame being sent.
-
         """
         kwargs = {
             "kind": kind,
@@ -61,6 +60,7 @@ class Frame(BaseModel):
             "time": time,
             "uuid": uuid,
         }
+        kwargs = {k: v for k, v in kwargs.items() if v is not None}
         original = {k: v for k, v in self.dict().items() if k not in ["time", "uuid"]}
         kwargs = {**original, **kwargs}
         kwargs["reply_to"] = self.uuid
