@@ -55,3 +55,28 @@ def test_frame_to_and_from_json():
     assert frame2.name == "test"
     assert frame2.time == now
     assert frame2.uuid == uuid
+
+    assert frame2.json(exclude_unset=True) == frame_json
+
+
+def test_frame_reply():
+    now = datetime.utcnow()
+    uuid = uuid4()
+
+    frame = Frame(kind="event", name="test", time=now, uuid=uuid)
+    reply = frame.reply(name="test", data={"hello": "world"})
+    assert reply.kind == "event"
+    assert reply.name == "test"
+    assert reply.data == {"hello": "world"}
+    assert reply.meta is None
+    assert reply.time is None
+    assert reply.uuid is None
+
+    reply2 = frame.reply(name="test", data={"test": "this"})
+    assert reply2.kind == "event"
+    assert reply2.name == "test"
+    assert reply2.data == {"test": "this"}
+    assert reply2.meta is None
+    assert reply2.time is None
+    assert reply2.uuid is None
+
