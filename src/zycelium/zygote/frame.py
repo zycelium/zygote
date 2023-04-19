@@ -8,9 +8,9 @@ from typing import Optional
 from pydantic import BaseModel  # pylint: disable=no-name-in-module
 
 
-
 class Frame(BaseModel):
     """Zygote Frame."""
+
     kind: str
     name: str
     data: Optional[dict] = None
@@ -39,7 +39,7 @@ class Frame(BaseModel):
 
     def reply(self, **kwargs) -> "Frame":
         """Create a reply Frame."""
-        original = {k:v for k, v in self.dict().items() if k not in ["time", "uuid"]}
+        original = {k: v for k, v in self.dict().items() if k not in ["time", "uuid"]}
         kwargs = {**original, **kwargs}
         kwargs["reply_to"] = self.uuid
         return Frame(**kwargs)
