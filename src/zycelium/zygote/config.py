@@ -5,6 +5,7 @@ from pathlib import Path
 
 import configobj
 from click import get_app_dir
+from passlib.hash import argon2
 
 from zycelium.dataconfig import dataconfig
 
@@ -19,6 +20,12 @@ class DefaultConfig:
 
     debug: bool = False
     database_url: str = f"sqlite:///{APP_DIR_PATH}/zygote.db"
+
+    admin_username: str = "admin"
+    admin_password: str = (
+        "$argon2id$v=19$m=65536,t=3,"
+        "p=4$07o3BkCIUcr5P4cQAmAMoQ$hhrChJnPrF8QFXO2eT6CZHSvkYLLVLVBEwIHxNpulOY"
+    )  # "admin"
 
     http_host: str = "localhost"
     http_port: int = 3965
@@ -46,6 +53,14 @@ class DefaultConfig:
             if potential_config_path.exists():
                 return potential_config_path
         return APP_DIR_PATH / APP_CONFIG_FILE
+
+    def change_password(self, new_password: str):
+        """Change admin password."""
+        self.admin_password = argon2.hash(new_password)
+
+    def check_password(self, password: str):
+        """Check admin password."""
+        return argon2.verify(password, self.admin_password)
 
 
 config = DefaultConfig()

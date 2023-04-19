@@ -23,3 +23,9 @@ def test_zygote_config_save_and_load(tmp_path: Path):
 
     zygote.config.load(temp_config_path)
     assert zygote.config.debug is True
+
+
+def test_zygote_config_change_password():
+    assert zygote.config.check_password("password") is False
+    zygote.config.change_password("password")
+    assert zygote.config.check_password("password") is True
