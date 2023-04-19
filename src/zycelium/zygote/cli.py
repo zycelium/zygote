@@ -81,9 +81,13 @@ def config_edit(obj):
 @click.option(
     "--yes", "-y", is_flag=True, default=False, help="Accept reset confirmation prompt."
 )
+@click.option("--password", prompt=True, hide_input=True)
 @click.pass_obj
-def config_reset(obj, yes):
+def config_reset(obj, yes, password):
     """Reset config to defaults."""
+    if not zygote.config.check_password(password):
+        click.echo("Incorrect password.")
+        raise click.Abort()
     conf = obj["conf"] or zygote.config.app_config_path
     click.echo(f"Reset config: {conf}")
     if yes or click.confirm("Are you sure you want to reset config to defaults?"):
