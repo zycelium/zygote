@@ -21,7 +21,6 @@ class DefaultConfig:
     debug: bool = False
     database_url: str = f"sqlite:///{APP_DIR_PATH}/zygote.db"
 
-    admin_username: str = "admin"
     admin_password: str = (
         "$argon2id$v=19$m=65536,t=3,"
         "p=4$07o3BkCIUcr5P4cQAmAMoQ$hhrChJnPrF8QFXO2eT6CZHSvkYLLVLVBEwIHxNpulOY"
