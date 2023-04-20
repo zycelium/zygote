@@ -55,7 +55,7 @@ def version():
 
 @main.command()
 @click.option("--debug", is_flag=True, help="Enable extra logging.")
-@zygote.config.click_option()  # pylint: disable=no-member # type: ignore
+@zygote.config.click_option()
 def serve(debug: bool):
     """Run Zygote instance."""
     # Ensure CA and server certificates exist.
