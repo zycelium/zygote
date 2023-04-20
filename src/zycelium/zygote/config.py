@@ -29,9 +29,11 @@ class DefaultConfig:
     http_host: str = "localhost"
     http_port: int = 3965
 
-    tls_cert_authority_file: str = f"{APP_DIR_PATH}/zygote_ca.pem"
-    tls_cert_file: str = f"{APP_DIR_PATH}/server_cert.pem"
-    tls_key_file: str = f"{APP_DIR_PATH}/server_key.pem"
+    ca_cert_file: str = f"{APP_DIR_PATH}/zygote_ca.pem"
+    ca_key_file: str = f"{APP_DIR_PATH}/zygote_ca_key.pem"
+
+    server_cert_file: str = f"{APP_DIR_PATH}/server_cert.pem"
+    server_key_file: str = f"{APP_DIR_PATH}/server_key.pem"
 
     instance_name: str = "Zygote"
     instance_description: str = "Personal Automation Framework"
