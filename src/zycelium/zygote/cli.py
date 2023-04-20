@@ -58,13 +58,12 @@ def version():
 @zygote.config.click_option()  # pylint: disable=no-member # type: ignore
 def serve(debug: bool):
     """Run Zygote instance."""
-    click.echo(f"Debug is {debug}.")
     # Ensure CA and server certificates exist.
     cert_authority = zygote.crypto.CertificateAuthority(
         org_name="Zycelium",
         org_unit_name="Zygote",
-        cert_path=Path(zygote.config.ca_cert_file),  # pylint: disable=no-member # type: ignore
-        key_path=Path(zygote.config.ca_key_file),  # pylint: disable=no-member # type: ignore
+        cert_path=Path(zygote.config.ca_cert_file),
+        key_path=Path(zygote.config.ca_key_file),
         valid_days=365,
     )
     cert_authority.ensure_server_certificate(
@@ -73,15 +72,18 @@ def serve(debug: bool):
         "127.0.0.1",
         "::1",
         common_name="zygote.local",
-        cert_path=Path(zygote.config.server_cert_file),  # pylint: disable=no-member # type: ignore
-        key_path=Path(zygote.config.server_key_file),  # pylint: disable=no-member # type: ignore
+        cert_path=Path(zygote.config.server_cert_file),
+        key_path=Path(zygote.config.server_key_file),
         valid_days=365,
     )
-    # Start Zygote.
-    click.echo(
-        f"Starting Zygote on {zygote.config.http_host}:{zygote.config.http_port}"
+    # Start Zygote instance.
+    zygote.instance.server.run_server(
+        host=zygote.config.http_host,
+        port=zygote.config.http_port,
+        ca_cert=zygote.config.ca_cert_file,
+        server_cert=zygote.config.server_cert_file,
+        server_key=zygote.config.server_key_file,
     )
-    zygote.instance.server.run_uvicorn_server()
 
 
 
