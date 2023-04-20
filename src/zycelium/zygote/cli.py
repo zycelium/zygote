@@ -80,6 +80,7 @@ def serve(debug: bool):
     zygote.instance.server.run_server(
         host=zygote.config.http_host,
         port=zygote.config.http_port,
+        debug=debug,
         ca_cert=zygote.config.ca_cert_file,
         server_cert=zygote.config.server_cert_file,
         server_key=zygote.config.server_key_file,
