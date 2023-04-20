@@ -82,9 +82,13 @@ def config_password(current_password, new_password):
 
 
 @config.command("edit")
+@click.option("--password", prompt=True, hide_input=True)
 @click.pass_obj
-def config_edit(obj):
+def config_edit(obj, password):
     """Edit config."""
+    if not zygote.config.check_password(password):
+        click.echo("Incorrect password.")
+        raise click.Abort()
     conf = obj["conf"] or zygote.config.app_config_path
     if not conf.exists():
         zygote.config.save(conf)  # pylint: disable=no-member # type: ignore
