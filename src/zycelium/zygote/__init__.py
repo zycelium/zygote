@@ -6,6 +6,7 @@ from zycelium.zygote.config import (
     DefaultConfig,
     ConfigParseError,
 )
+from zycelium.zygote import crypto
 from zycelium.zygote import logging
 from zycelium.zygote import models
 from zycelium.zygote import signals
@@ -20,6 +21,7 @@ __all__ = [
     "ConfigParseError",
     "DefaultConfig",
     "config",
+    "crypto",
     "Frame",
     "logging",
     "models",
