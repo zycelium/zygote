@@ -613,6 +613,7 @@ astrology
 astronomy
 asus
 asylum
+asymmetric
 at
 ata
 ate
@@ -2197,6 +2198,7 @@ cruz
 cry
 crypto
 Cryptographic
+cryptography
 crystal
 cs
 css
@@ -2333,6 +2335,7 @@ decent
 decide
 decided
 decimal
+decipher
 decision
 decisions
 deck
@@ -2923,6 +2926,7 @@ elite
 elizabeth
 ellen
 elliott
+Elliptic
 ellis
 else
 elsewhere
@@ -2962,6 +2966,8 @@ enabled
 enables
 enabling
 enb
+encipher
+encipherment
 enclosed
 enclosure
 encoding
@@ -4047,6 +4053,7 @@ harvest
 harvey
 has
 hash
+hashes
 hat
 hate
 hats
@@ -4061,6 +4068,7 @@ hayes
 hazard
 hazardous
 hazards
+hazmat
 hb
 hc
 hd
@@ -4672,6 +4680,7 @@ israeli
 issn
 issue
 issued
+issuer
 issues
 ist
 istanbul
@@ -6873,6 +6882,7 @@ priest
 primarily
 primary
 prime
+primitives
 prince
 princess
 princeton
@@ -7874,6 +7884,7 @@ sec
 second
 secondary
 seconds
+SECP
 secret
 secretariat
 secretary
