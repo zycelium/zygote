@@ -81,6 +81,8 @@ def serve(debug: bool):
     click.echo(
         f"Starting Zygote on {zygote.config.http_host}:{zygote.config.http_port}"
     )
+    zygote.instance.server.run_uvicorn_server()
+
 
 
 @main.group()
