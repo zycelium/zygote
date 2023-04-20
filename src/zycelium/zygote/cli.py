@@ -59,6 +59,28 @@ def version():
 def serve(debug: bool):
     """Run Zygote instance."""
     click.echo(f"Debug is {debug}.")
+    # Ensure CA and server certificates exist.
+    cert_authority = zygote.crypto.CertificateAuthority(
+        org_name="Zycelium",
+        org_unit_name="Zygote",
+        cert_path=Path(zygote.config.ca_cert_file),  # pylint: disable=no-member # type: ignore
+        key_path=Path(zygote.config.ca_key_file),  # pylint: disable=no-member # type: ignore
+        valid_days=365,
+    )
+    cert_authority.ensure_server_certificate(
+        "localhost",
+        "zygote.local",
+        "127.0.0.1",
+        "::1",
+        common_name="zygote.local",
+        cert_path=Path(zygote.config.server_cert_file),  # pylint: disable=no-member # type: ignore
+        key_path=Path(zygote.config.server_key_file),  # pylint: disable=no-member # type: ignore
+        valid_days=365,
+    )
+    # Start Zygote.
+    click.echo(
+        f"Starting Zygote on {zygote.config.http_host}:{zygote.config.http_port}"
+    )
 
 
 @main.group()
