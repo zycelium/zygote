@@ -65,6 +65,10 @@ class DefaultConfig:
         """Check admin password."""
         return argon2.verify(password, self.admin_password)
 
+    def ensure_app_dir(self):
+        """Ensure app directory exists."""
+        self.app_dir.mkdir(parents=True, exist_ok=True)
+
 
 config = DefaultConfig()
 ConfigParseError = configobj.UnreprError

@@ -31,6 +31,20 @@ def main(ctx, conf):
                 click.echo(
                     f"Error reading config file at: {zygote.config.app_config_path}"
                 )
+        else:
+            # Ensure app dir exists for the default config file which may be saved further down.
+            try:
+                zygote.config.ensure_app_dir()  # pylint: disable=no-member # type: ignore
+            except Exception as exc:
+                click.echo(exc)
+                click.echo(
+                    f"Error creating app directory at: {zygote.config.app_dir}"
+                )
+                raise click.Abort()
+            click.echo(
+                f"Config file not found at: {zygote.config.app_config_path}. "
+                "Using default configuration."
+            )
 
 
 @main.command()
