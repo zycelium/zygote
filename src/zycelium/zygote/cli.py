@@ -1,6 +1,7 @@
 """
 Zygote CLI
 """
+# pylint: disable=no-member
 import asyncio
 from pathlib import Path
 
@@ -18,15 +19,13 @@ def main(ctx, conf):
     ctx.obj["conf"] = Path(conf) if conf else None
     if conf:
         try:
-            zygote.config.load(conf)  # pylint: disable=no-member # type: ignore
+            zygote.config.load(conf)
         except zygote.ConfigParseError:
             click.echo(f"Error reading config file at: {conf}")
     else:
         if zygote.config.app_config_path.exists():
             try:
-                zygote.config.load(  # pylint: disable=no-member # type: ignore
-                    zygote.config.app_config_path
-                )
+                zygote.config.load(zygote.config.app_config_path)
             except zygote.ConfigParseError:
                 click.echo(
                     f"Error reading config file at: {zygote.config.app_config_path}"
@@ -34,12 +33,10 @@ def main(ctx, conf):
         else:
             # Ensure app dir exists for the default config file which may be saved further down.
             try:
-                zygote.config.ensure_app_dir()  # pylint: disable=no-member # type: ignore
+                zygote.config.ensure_app_dir()
             except Exception as exc:
                 click.echo(exc)
-                click.echo(
-                    f"Error creating app directory at: {zygote.config.app_dir}"
-                )
+                click.echo(f"Error creating app directory at: {zygote.config.app_dir}")
                 raise click.Abort()
             click.echo(
                 f"Config file not found at: {zygote.config.app_config_path}. "
@@ -87,7 +84,6 @@ def serve(debug: bool):
     )
 
 
-
 @main.group()
 def config():
     """Manage config."""
@@ -100,9 +96,7 @@ def config_password(current_password, new_password):
     """Change config password."""
     if zygote.config.check_password(current_password):
         zygote.config.change_password(new_password)
-        zygote.config.save(  # pylint: disable=no-member # type: ignore
-            zygote.config.app_config_path, overwrite=True
-        )
+        zygote.config.save(zygote.config.app_config_path, overwrite=True)
         click.echo("Admin password updated.")
     else:
         click.echo("Incorrect password.")
@@ -118,7 +112,7 @@ def config_edit(obj, password):
         raise click.Abort()
     conf = obj["conf"] or zygote.config.app_config_path
     if not conf.exists():
-        zygote.config.save(conf)  # pylint: disable=no-member # type: ignore
+        zygote.config.save(conf)
     click.edit(filename=str(conf))
 
 
@@ -137,9 +131,7 @@ def config_reset(obj, yes, password):
     click.echo(f"Reset config: {conf}")
     if yes or click.confirm("Are you sure you want to reset config to defaults?"):
         default_config = zygote.DefaultConfig()
-        default_config.save(  # pylint: disable=no-member # type: ignore
-            conf, overwrite=True
-        )
+        default_config.save(conf, overwrite=True)
     else:
         click.echo("Config was not modified.")
 
