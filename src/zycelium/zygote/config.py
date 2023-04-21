@@ -1,6 +1,7 @@
 """
 Zygote Configuration.
 """
+from dataclasses import field
 from pathlib import Path
 
 import configobj
@@ -39,6 +40,13 @@ class DefaultConfig:
     instance_description: str = "Personal Automation Framework"
     instance_base_url: str = "https://localhost:3965"
     instance_verify_tls: bool = False
+
+    server_identities: list = field(default_factory=lambda: [
+            "localhost",
+            "127.0.0.1",
+            "::1",
+            "zygote.local",
+        ])
 
     @property
     def app_dir(self):
