@@ -41,12 +41,14 @@ class DefaultConfig:
     instance_base_url: str = "https://localhost:3965"
     instance_verify_tls: bool = False
 
-    server_identities: list = field(default_factory=lambda: [
+    server_identities: list = field(
+        default_factory=lambda: [
             "localhost",
             "127.0.0.1",
             "::1",
             "zygote.local",
-        ])
+        ]
+    )
 
     @property
     def app_dir(self):
