@@ -64,10 +64,7 @@ def serve(debug: bool):
         valid_days=365,
     )
     cert_authority.ensure_server_certificate(
-        "localhost",
-        "zygote.local",
-        "127.0.0.1",
-        "::1",
+        zygote.config.server_identities,
         common_name="zygote.local",
         cert_path=Path(zygote.config.server_cert_file),
         key_path=Path(zygote.config.server_key_file),
