@@ -133,7 +133,7 @@ class CertificateAuthority:
 
     def ensure_server_certificate(
         self,
-        *identities: list[str],
+        identities: list[str],
         common_name: str,
         cert_path: Path = Path("zygote_server_cert.pem"),
         key_path: Path = Path("zygote_server_key.pem"),
