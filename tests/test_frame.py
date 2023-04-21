@@ -81,4 +81,3 @@ def test_frame_reply():
     assert reply2.meta is None
     assert reply2.time is None
     assert reply2.uuid is None
-
