@@ -43,10 +43,10 @@ class DefaultConfig:
 
     server_identities: list = field(
         default_factory=lambda: [
+            "zygote.local",
             "localhost",
             "127.0.0.1",
             "::1",
-            "zygote.local",
         ]
     )
 
