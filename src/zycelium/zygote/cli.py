@@ -130,7 +130,9 @@ def config_reset(obj, yes, password):
     conf = obj["conf"] or zygote.config.app_config_path
     click.echo(f"Reset config: {conf}")
     if yes or click.confirm("Are you sure you want to reset config to defaults?"):
+        password_hash = zygote.config.admin_password
         default_config = zygote.DefaultConfig()
+        default_config.admin_password = password_hash
         default_config.save(conf, overwrite=True)
     else:
         click.echo("Config was not modified.")
