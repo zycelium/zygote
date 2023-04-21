@@ -630,6 +630,7 @@ atmosphere
 atmospheric
 atom
 atomic
+aton
 attach
 attached
 attachment
@@ -5478,6 +5479,7 @@ mba
 mc
 mcdonald
 md
+mdns
 me
 meal
 meals
@@ -7042,6 +7044,7 @@ psychiatry
 psychological
 psychology
 pt
+pton
 pts
 pty
 pub
@@ -9920,6 +9923,7 @@ zdnet
 zealand
 zen
 zero
+zeroconf
 zimbabwe
 zinc
 zip
