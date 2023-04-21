@@ -65,7 +65,7 @@ def serve(debug: bool):
     )
     cert_authority.ensure_server_certificate(
         zygote.config.server_identities,
-        common_name="zygote.local",
+        common_name=list(zygote.config.server_identities)[0],
         cert_path=Path(zygote.config.server_cert_file),
         key_path=Path(zygote.config.server_key_file),
         valid_days=365,
