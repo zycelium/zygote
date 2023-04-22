@@ -16,7 +16,7 @@ async def before_serving():
     """Before serving."""
     app.local_dns = LocalDNS()
     await app.local_dns.start(
-        domain="zygote",
+        domain=config.server_default_identity,
         host=config.http_host,
         port=config.http_port,
     )

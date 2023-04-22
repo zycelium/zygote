@@ -24,6 +24,7 @@ class LocalDNS:
         port: int,
     ):
         """Start mDNS."""
+        domain = domain.removesuffix(".local") if domain.endswith(".local") else domain
         ipv4_address = socket.gethostbyname(host)
         ipv6_address = socket.getaddrinfo(host, port, socket.AF_INET6)[0][4][0]
         self.logger.info("Starting Local DNS")
