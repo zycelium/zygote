@@ -65,7 +65,7 @@ def serve(debug: bool):
     )
     cert_authority.ensure_server_certificate(
         zygote.config.server_identities,
-        common_name=list(zygote.config.server_identities)[0],
+        common_name=zygote.config.server_default_identity,
         cert_path=Path(zygote.config.server_cert_file),
         key_path=Path(zygote.config.server_key_file),
         valid_days=365,
@@ -84,6 +84,68 @@ def serve(debug: bool):
 @main.group()
 def config():
     """Manage config."""
+
+
+@config.command("create")
+@click.argument("path", type=click.Path(), default=zygote.config.app_config_path)
+@click.option(
+    "--instance-name",
+    prompt=True,
+    help="Instance name, should be unique within LAN/VPN",
+    default="Zygote",
+)
+@click.option("--instance-description", prompt=True, default="Zygote instance.")
+@click.option(
+    "--instance-base-url",
+    prompt=True,
+    help="URL used to access the instance (change default if behind a proxy or on VPN).",
+    default="https://zygote.local:3965",
+)
+@click.option(
+    "--http-host",
+    prompt=True,
+    help="Default: localhost. Use machine's LAN/VPN IP address to access over local/private network.",
+    default="localhost",
+)
+@click.option("--http-port", prompt=True, help="Default: 3965.", type=int, default=3965)
+@click.option("--password", prompt=True, hide_input=True)
+@click.option("--password-confirm", prompt=True, hide_input=True)
+@click.pass_obj
+def config_create(
+    obj,
+    path,
+    instance_name,
+    instance_description,
+    instance_base_url,
+    http_host,
+    http_port,
+    password,
+    password_confirm,
+):
+    """Create config."""
+    if path:
+        conf = Path(path)
+    else:
+        conf = obj["conf"] or zygote.config.app_config_path
+    if password != password_confirm:
+        click.echo("Passwords do not match.")
+        raise click.Abort()
+    zygote.config.ensure_app_dir()
+    zygote.config.instance_name = instance_name
+    zygote.config.server_default_identity = f"{instance_name.lower()}.local"
+    zygote.config.instance_description = instance_description
+    zygote.config.instance_base_url = instance_base_url
+    zygote.config.http_host = http_host
+    zygote.config.http_port = http_port
+    zygote.config.change_password(password)
+    if conf.exists():
+        if click.confirm(f"Config file already exists at: {conf}, overwrite?"):
+            zygote.config.save(conf, overwrite=True)
+        else:
+            click.echo(f"Config file not created at: {conf}")
+    else:
+        zygote.config.save(conf)
+    click.echo(f"Config file created at: {conf}")
 
 
 @config.command("password")
