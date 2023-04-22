@@ -27,19 +27,22 @@ class LocalDNS:
         ipv4_address = socket.gethostbyname(host)
         ipv6_address = socket.getaddrinfo(host, port, socket.AF_INET6)[0][4][0]
         self.logger.info("Starting Local DNS")
-        self.service = AsyncServiceInfo(
-            type_="_https._tcp.local.",
-            name=f"{domain}._https._tcp.local.",
-            addresses=[
-                socket.inet_aton(ipv4_address),
-                socket.inet_pton(socket.AF_INET6, ipv6_address),
-            ],
-            properties={"path": "/"},
-            server=f"{domain}.local.",
-            port=port,
-        )
-        await self.zeroconf.async_register_service(self.service)
-        self.logger.info("Started Local DNS")
+        try:
+            self.service = AsyncServiceInfo(
+                type_="_https._tcp.local.",
+                name=f"{domain}._https._tcp.local.",
+                addresses=[
+                    socket.inet_aton(ipv4_address),
+                    socket.inet_pton(socket.AF_INET6, ipv6_address),
+                ],
+                properties={"path": "/"},
+                server=f"{domain}.local.",
+                port=port,
+            )
+            await self.zeroconf.async_register_service(self.service)
+            self.logger.info("Started Local DNS")
+        except Exception as exc:
+            self.logger.exception("Unable to start Local DNS.", exc_info=exc)
 
     async def stop(self):
         """Stop mDNS."""
