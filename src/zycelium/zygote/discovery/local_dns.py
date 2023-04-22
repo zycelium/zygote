@@ -41,7 +41,7 @@ class LocalDNS:
             )
             await self.zeroconf.async_register_service(self.service)
             self.logger.info("Started Local DNS")
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             self.logger.exception("Unable to start Local DNS.", exc_info=exc)
 
     async def stop(self):
