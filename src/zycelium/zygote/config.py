@@ -38,7 +38,7 @@ class DefaultConfig:
 
     instance_name: str = "Zygote"
     instance_description: str = "Personal Automation Framework"
-    instance_base_url: str = "https://localhost:3965"
+    instance_base_url: str = "https://zygote.local:3965"
     instance_verify_tls: bool = False
 
     server_identities: list = field(
@@ -49,6 +49,7 @@ class DefaultConfig:
             "::1",
         ]
     )
+    server_default_identity: str = "zygote.local"
 
     @property
     def app_dir(self):
