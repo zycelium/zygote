@@ -7,6 +7,7 @@ from zycelium.zygote.config import (
     ConfigParseError,
 )
 from zycelium.zygote import crypto
+from zycelium.zygote import discovery
 from zycelium.zygote import instance
 from zycelium.zygote import logging
 from zycelium.zygote import models
